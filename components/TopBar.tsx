@@ -557,6 +557,9 @@ const logoImageStyle: React.CSSProperties = {
   width: "42px",
   height: "42px",
   display: "block",
+  objectFit: "contain",
+  opacity: 1,
+  flexShrink: 0,
 };
 
 function SearchIcon() {
