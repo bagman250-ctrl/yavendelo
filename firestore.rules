@@ -35,16 +35,35 @@ service cloud.firestore {
         && request.resource.data.likes >= 0;
     }
 
+    function ownerCanUpdatePost() {
+      return signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          "titulo",
+          "precio",
+          "ciudad",
+          "categoria",
+          "descripcion",
+          "status",
+          "updatedAt",
+          "statusUpdatedAt"
+        ]);
+    }
+
     match /posts/{postId} {
       allow read: if true;
+
       allow create: if signedIn()
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.titulo is string
         && request.resource.data.precio is string
         && request.resource.data.imagenes is list;
+
       allow update: if isAdmin()
-        || (signedIn() && resource.data.userId == request.auth.uid)
-        || updatesOnlyEngagement();
+        || updatesOnlyEngagement()
+        || ownerCanUpdatePost();
+
       allow delete: if isAdmin()
         || (signedIn() && resource.data.userId == request.auth.uid);
     }
@@ -99,15 +118,20 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.participants is list
         && request.auth.uid in request.resource.data.participants;
+
       allow read, update, delete: if isAdmin() || isParticipant();
 
       match /messages/{messageId} {
         allow read: if isAdmin()
-          || (signedIn()
-            && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants);
+          || (
+            signedIn()
+            && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
+          );
+
         allow create: if signedIn()
           && request.resource.data.senderId == request.auth.uid
           && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+
         allow update, delete: if isAdmin();
       }
     }
