@@ -536,15 +536,22 @@ function LogoIcon() {
   return (
     <span className="logo-icon" style={logoIconWrap} aria-hidden="true">
       <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
+        <rect x="4.5" y="4.5" width="33" height="33" rx="10" fill="url(#yvGradient)" />
+        <rect x="5.25" y="5.25" width="31.5" height="31.5" rx="9.25" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
         <path
-          d="M9 6.5h18.7c1.1 0 2.2.5 2.9 1.4l4.6 5.7c.9 1.1.9 2.7 0 3.8L20.5 35.2c-1.2 1.5-3.4 1.6-4.8.2L6.6 26.3c-.6-.6-.9-1.4-.9-2.2V9.8c0-1.8 1.5-3.3 3.3-3.3Z"
-          fill="url(#tagGradient)"
+          d="M10.8 12.8h5.9l4.2 7.2 4.2-7.2h5.7L23.7 24v5.2h-5.5v-5.1L10.8 12.8Z"
+          fill="#101010"
         />
-        <path d="M13.2 13.5h6.4l3.2 6.1 3.3-6.1h5.9L25.6 24v6.4h-5.8v-6.2l-6.6-10.7Z" fill="#101010" />
-        <path d="M29.8 11.6h.1" stroke="#101010" strokeWidth="3.8" strokeLinecap="round" />
-        <path d="m25.2 26.9 2.7 2.7 5.1-6" stroke="#101010" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M26.6 12.8h5.8L26 29.2h-5.7l2.4-5.2 1.2-2.5 2.7-8.7Z"
+          fill="#101010"
+          opacity="0.92"
+        />
+        <path d="M13.2 12.8h3.5l4.2 7.2 4.2-7.2h3.6L21 25.1l-7.8-12.3Z" fill="#ffffff" opacity="0.96" />
+        <path d="M27.3 12.8h3.6l-6.4 16.4h-3.6l6.4-16.4Z" fill="#ffffff" opacity="0.96" />
+        <path d="M9.5 31.5h23" stroke="#101010" strokeOpacity="0.22" strokeWidth="2" strokeLinecap="round" />
         <defs>
-          <linearGradient id="tagGradient" x1="6" y1="5" x2="35" y2="36" gradientUnits="userSpaceOnUse">
+          <linearGradient id="yvGradient" x1="5" y1="4" x2="37" y2="38" gradientUnits="userSpaceOnUse">
             <stop stopColor="#FFC078" />
             <stop offset="0.45" stopColor="#FF7B00" />
             <stop offset="1" stopColor="#FF4D00" />
