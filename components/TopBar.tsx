@@ -1,21 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { User, onAuthStateChanged } from "firebase/auth";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, doc, limit, onSnapshot, orderBy, query, updateDoc, where } from "firebase/firestore";
 
 import { auth, db } from "@/app/firebase/config";
 import AuthButtons from "./AuthButtons";
 
+type NotificationPreview = {
+  id: string;
+  title?: string;
+  message?: string;
+  read?: boolean;
+  link?: string;
+  type?: string;
+};
+
 export default function TopBar() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [search, setSearch] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<NotificationPreview[]>([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
-      if (!firebaseUser) setUnreadCount(0);
+      if (!firebaseUser) {
+        setUnreadCount(0);
+        setNotifications([]);
+      }
     });
 
     return () => unsubscribeAuth();
@@ -24,14 +41,14 @@ export default function TopBar() {
   useEffect(() => {
     if (!user) return;
 
-    const q = query(
+    const unreadQuery = query(
       collection(db, "notifications"),
       where("userId", "==", user.uid),
       where("read", "==", false)
     );
 
-    const unsubscribe = onSnapshot(
-      q,
+    const unsubscribeUnread = onSnapshot(
+      unreadQuery,
       (snapshot) => {
         setUnreadCount(snapshot.size);
       },
@@ -41,17 +58,69 @@ export default function TopBar() {
       }
     );
 
-    return () => unsubscribe();
+    const previewQuery = query(
+      collection(db, "notifications"),
+      where("userId", "==", user.uid),
+      orderBy("createdAt", "desc"),
+      limit(5)
+    );
+
+    const unsubscribePreview = onSnapshot(
+      previewQuery,
+      (snapshot) => {
+        setNotifications(
+          snapshot.docs.map((document) => ({
+            id: document.id,
+            ...document.data(),
+          })) as NotificationPreview[]
+        );
+      },
+      (error) => {
+        console.warn("No se pudieron cargar previews de notificaciones:", error);
+        setNotifications([]);
+      }
+    );
+
+    return () => {
+      unsubscribeUnread();
+      unsubscribePreview();
+    };
   }, [user]);
+
+  function submitSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const cleanSearch = search.trim();
+
+    if (!cleanSearch) {
+      router.push("/#productos");
+      return;
+    }
+
+    router.push(`/?q=${encodeURIComponent(cleanSearch)}#productos`);
+    window.dispatchEvent(new CustomEvent("yavendelo-search", { detail: cleanSearch }));
+  }
+
+  async function markNotificationRead(notification: NotificationPreview) {
+    if (!notification.read) {
+      await updateDoc(doc(db, "notifications", notification.id), { read: true }).catch((error) => {
+        console.warn("No se pudo marcar notificación:", error);
+      });
+    }
+
+    setNotificationsOpen(false);
+  }
 
   return (
     <header style={headerStyle}>
       <div style={containerStyle}>
         <div style={leftStyle}>
-          <Link href="/" style={{ textDecoration: "none", color: "white" }} aria-label="Ir al inicio">
+          <Link href="/" className="brand-link" style={{ textDecoration: "none", color: "white" }} aria-label="Ir al inicio">
             <div style={logoStyle}>
-              <span style={logoMark}>YV</span>
-              <span>YaVendelo</span>
+              <span style={logoMark} aria-hidden="true">
+                <span style={logoSpark} />
+                <span style={logoCartLine} />
+              </span>
+              <span style={logoText}>YaVendelo</span>
             </div>
           </Link>
 
@@ -64,19 +133,67 @@ export default function TopBar() {
         </div>
 
         <div style={rightStyle}>
-          <Link href="/#productos" className="top-search-box" style={searchBox}>
-            <span style={searchIcon} aria-hidden="true">⌕</span>
-            Buscar productos
-          </Link>
+          <form className="top-search-box" onSubmit={submitSearch} style={searchBox}>
+            <SearchIcon />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar iPhone, moto, sala..."
+              aria-label="Buscar productos"
+              style={searchInput}
+            />
+            <button type="submit" aria-label="Buscar" style={searchSubmit}>
+              Buscar
+            </button>
+          </form>
 
-          <Link href="/notificaciones" style={notificationButton} aria-label="Notificaciones">
-            <span aria-hidden="true" style={notificationIcon}>!</span>
+          <div style={notificationWrap}>
+            <button
+              type="button"
+              className="notification-bell"
+              style={unreadCount > 0 ? activeNotificationButton : notificationButton}
+              aria-label={`Notificaciones${unreadCount > 0 ? `, ${unreadCount} sin leer` : ""}`}
+              aria-expanded={notificationsOpen}
+              onClick={() => setNotificationsOpen((current) => !current)}
+            >
+              <BellIcon active={unreadCount > 0} />
             {unreadCount > 0 && (
               <span style={badgeStyle}>
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
-          </Link>
+            </button>
+
+            {notificationsOpen && (
+              <div style={notificationsMenu}>
+                <div style={notificationsMenuHeader}>
+                  <strong>Notificaciones</strong>
+                  <Link href="/notificaciones" style={menuTinyLink} onClick={() => setNotificationsOpen(false)}>
+                    Ver todas
+                  </Link>
+                </div>
+
+                {notifications.length === 0 ? (
+                  <div style={notificationEmpty}>Todo tranquilo por ahora.</div>
+                ) : (
+                  notifications.map((notification) => (
+                    <Link
+                      key={notification.id}
+                      href={notification.link || "/notificaciones"}
+                      style={notificationItem}
+                      onClick={() => markNotificationRead(notification)}
+                    >
+                      <span style={notificationDot(notification.read)} />
+                      <span style={{ minWidth: 0 }}>
+                        <strong>{notification.title || "Nueva actividad"}</strong>
+                        <small>{notification.message || "Tienes una notificación nueva."}</small>
+                      </span>
+                    </Link>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
 
           <AuthButtons />
         </div>
@@ -91,14 +208,36 @@ export default function TopBar() {
 
         @media (max-width: 760px) {
           .top-search-box {
-            display: none !important;
+            order: 3;
+            width: 100% !important;
+            min-width: 100% !important;
           }
         }
 
         @media (max-width: 520px) {
-          header {
+          header :global(nav) {
             display: none !important;
           }
+        }
+
+        .brand-link:hover :global(span:first-child) {
+          transform: translateY(-1px) scale(1.03);
+        }
+
+        .top-search-box:focus-within {
+          border-color: rgba(255, 123, 0, 0.58) !important;
+          box-shadow: 0 0 0 4px rgba(255, 123, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+        }
+
+        .notification-bell:hover {
+          transform: translateY(-1px);
+          border-color: rgba(255, 123, 0, 0.38) !important;
+          background: rgba(255, 123, 0, 0.12) !important;
+        }
+
+        .notification-bell[aria-expanded="true"] {
+          border-color: rgba(255, 123, 0, 0.48) !important;
+          background: rgba(255, 123, 0, 0.14) !important;
         }
       `}</style>
     </header>
@@ -117,11 +256,12 @@ const headerStyle: React.CSSProperties = {
 const containerStyle: React.CSSProperties = {
   maxWidth: "1240px",
   margin: "0 auto",
-  padding: "14px 24px",
+  padding: "12px 24px",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   gap: "20px",
+  flexWrap: "wrap",
 };
 
 const leftStyle: React.CSSProperties = {
@@ -133,24 +273,55 @@ const leftStyle: React.CSSProperties = {
 const logoStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "10px",
-  fontSize: "23px",
+  gap: "11px",
   fontWeight: "900",
   letterSpacing: "0",
   whiteSpace: "nowrap",
 };
 
 const logoMark: React.CSSProperties = {
-  width: "34px",
-  height: "34px",
+  position: "relative",
+  width: "38px",
+  height: "38px",
   borderRadius: "8px",
-  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
-  color: "#101010",
+  background:
+    "linear-gradient(135deg, rgba(255,176,103,0.95), rgba(255,123,0,0.94)), radial-gradient(circle at 28% 20%, #fff4d8, transparent 28px)",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "12px",
-  boxShadow: "0 12px 26px rgba(255,123,0,0.24)",
+  boxShadow: "0 14px 34px rgba(255,123,0,0.32), inset 0 1px 0 rgba(255,255,255,0.28)",
+  overflow: "hidden",
+  transition: "transform 0.18s ease, box-shadow 0.18s ease",
+};
+
+const logoSpark: React.CSSProperties = {
+  position: "absolute",
+  width: "14px",
+  height: "14px",
+  borderRadius: "4px",
+  background: "#101010",
+  transform: "rotate(45deg)",
+  top: "9px",
+  left: "10px",
+};
+
+const logoCartLine: React.CSSProperties = {
+  position: "absolute",
+  width: "20px",
+  height: "10px",
+  borderLeft: "3px solid #101010",
+  borderBottom: "3px solid #101010",
+  borderRadius: "0 0 0 5px",
+  right: "8px",
+  bottom: "10px",
+};
+
+const logoText: React.CSSProperties = {
+  fontSize: "23px",
+  letterSpacing: "0",
+  background: "linear-gradient(180deg, #fff, #d9d9d9)",
+  WebkitBackgroundClip: "text",
+  color: "transparent",
 };
 
 const navStyle: React.CSSProperties = {
@@ -171,14 +342,20 @@ const rightStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: "12px",
+  flexWrap: "wrap",
+  justifyContent: "flex-end",
+};
+
+const notificationWrap: React.CSSProperties = {
+  position: "relative",
+  flexShrink: 0,
 };
 
 const notificationButton: React.CSSProperties = {
   position: "relative",
-  textDecoration: "none",
   color: "white",
-  width: "44px",
-  height: "44px",
+  width: "46px",
+  height: "46px",
   borderRadius: "8px",
   background: "rgba(255,255,255,0.06)",
   border: "1px solid rgba(255,255,255,0.1)",
@@ -187,19 +364,15 @@ const notificationButton: React.CSSProperties = {
   justifyContent: "center",
   flexShrink: 0,
   boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+  cursor: "pointer",
+  transition: "transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease",
 };
 
-const notificationIcon: React.CSSProperties = {
-  width: "18px",
-  height: "18px",
-  borderRadius: "999px",
-  border: "2px solid #ffb067",
-  color: "#ffb067",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "12px",
-  fontWeight: "900",
+const activeNotificationButton: React.CSSProperties = {
+  ...notificationButton,
+  border: "1px solid rgba(255,123,0,0.36)",
+  background: "rgba(255,123,0,0.12)",
+  boxShadow: "0 12px 30px rgba(255,123,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
 };
 
 const badgeStyle: React.CSSProperties = {
@@ -223,21 +396,128 @@ const searchBox: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   minHeight: "44px",
-  minWidth: "220px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.1)",
+  minWidth: "300px",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.045))",
+  border: "1px solid rgba(255,255,255,0.12)",
   borderRadius: "8px",
-  padding: "0 14px",
+  padding: "0 7px 0 13px",
   color: "#a7a7a7",
   textDecoration: "none",
   fontSize: "14px",
   fontWeight: "800",
   gap: "8px",
   boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+  transition: "border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease",
 };
 
-const searchIcon: React.CSSProperties = {
-  color: "#ffb067",
-  fontSize: "18px",
-  lineHeight: 1,
+const searchInput: React.CSSProperties = {
+  flex: 1,
+  minWidth: 0,
+  border: "none",
+  outline: "none",
+  background: "transparent",
+  color: "#ffffff",
+  fontSize: "14px",
+  fontWeight: "800",
 };
+
+const searchSubmit: React.CSSProperties = {
+  minHeight: "34px",
+  border: "none",
+  borderRadius: "8px",
+  background: "rgba(255,123,0,0.14)",
+  color: "#ffb067",
+  padding: "0 11px",
+  fontSize: "12px",
+  fontWeight: "900",
+  cursor: "pointer",
+};
+
+const notificationsMenu: React.CSSProperties = {
+  position: "absolute",
+  top: "calc(100% + 10px)",
+  right: 0,
+  width: "min(340px, calc(100vw - 32px))",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(12,12,12,0.98)",
+  backdropFilter: "blur(18px)",
+  borderRadius: "8px",
+  padding: "10px",
+  display: "grid",
+  gap: "8px",
+  boxShadow: "0 24px 70px rgba(0,0,0,0.44)",
+  zIndex: 1001,
+};
+
+const notificationsMenuHeader: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
+  padding: "6px 6px 8px",
+  color: "#ffffff",
+};
+
+const menuTinyLink: React.CSSProperties = {
+  color: "#ffb067",
+  fontSize: "12px",
+  fontWeight: "900",
+  textDecoration: "none",
+};
+
+const notificationItem: React.CSSProperties = {
+  display: "flex",
+  gap: "10px",
+  alignItems: "flex-start",
+  color: "#ffffff",
+  textDecoration: "none",
+  borderRadius: "8px",
+  background: "rgba(255,255,255,0.045)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  padding: "11px",
+};
+
+const notificationEmpty: React.CSSProperties = {
+  borderRadius: "8px",
+  background: "rgba(255,255,255,0.045)",
+  color: "#bdbdbd",
+  padding: "18px 12px",
+  textAlign: "center",
+  fontWeight: "800",
+};
+
+function notificationDot(read?: boolean): React.CSSProperties {
+  return {
+    width: "9px",
+    height: "9px",
+    borderRadius: "999px",
+    marginTop: "5px",
+    background: read ? "rgba(255,255,255,0.18)" : "#ff7b00",
+    boxShadow: read ? "none" : "0 0 14px rgba(255,123,0,0.9)",
+    flexShrink: 0,
+  };
+}
+
+function BellIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M18 9.8C18 6.6 15.6 4 12.4 4h-.8C8.4 4 6 6.6 6 9.8v2.9c0 .8-.3 1.6-.9 2.2L4 16.1V18h16v-1.9l-1.1-1.2c-.6-.6-.9-1.4-.9-2.2V9.8Z"
+        stroke={active ? "#ffb067" : "#d8d8d8"}
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+      <path d="M9.5 20a2.7 2.7 0 0 0 5 0" stroke={active ? "#ffb067" : "#d8d8d8"} strokeWidth="1.8" strokeLinecap="round" />
+      {active && <circle cx="17.5" cy="5.5" r="2.2" fill="#ff3b30" />}
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="m20 20-4.4-4.4" stroke="#ffb067" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="11" cy="11" r="6" stroke="#ffb067" strokeWidth="2" />
+    </svg>
+  );
+}

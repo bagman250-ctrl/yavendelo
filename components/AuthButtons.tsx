@@ -26,7 +26,7 @@ export default function AuthButtons() {
 
   if (!user) {
     return (
-      <div style={authGroup}>
+      <div className="auth-group" style={authGroup}>
         <Link href="/login" style={ghostLink}>
           Iniciar sesión
         </Link>
@@ -38,7 +38,7 @@ export default function AuthButtons() {
   }
 
   return (
-    <div style={authGroup}>
+    <div className="auth-group" style={authGroup}>
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
@@ -53,7 +53,7 @@ export default function AuthButtons() {
           size={42}
           label="Abrir perfil"
         />
-        <div style={userText}>
+        <div className="auth-user-text" style={userText}>
           <strong>{user.displayName || "Usuario"}</strong>
           <span>{user.email}</span>
         </div>
@@ -72,6 +72,25 @@ export default function AuthButtons() {
           <Link href="/publicar" style={menuPrimary}>Publicar producto</Link>
         </div>
       )}
+
+      <style jsx>{`
+        @media (max-width: 760px) {
+          .auth-user-text {
+            display: none !important;
+          }
+
+          .auth-group {
+            gap: 8px !important;
+          }
+        }
+
+        @media (max-width: 520px) {
+          .auth-group a,
+          .auth-group button {
+            min-height: 40px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

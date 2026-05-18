@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -107,6 +107,24 @@ export default function Home() {
   useEffect(() => {
     trackEvent(analyticsEvents.viewHome, { page: "/" });
 
+    const initialQuery = new URLSearchParams(window.location.search).get("q");
+    if (initialQuery) {
+      setSearch(initialQuery);
+      requestAnimationFrame(() => {
+        document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+
+    function syncSearchFromTopBar(event: Event) {
+      const query = (event as CustomEvent<string>).detail || "";
+      setSearch(query);
+      requestAnimationFrame(() => {
+        document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+
+    window.addEventListener("yavendelo-search", syncSearchFromTopBar);
+
     async function getPosts() {
       try {
         const querySnapshot = await getDocs(collection(db, "posts"));
@@ -142,6 +160,8 @@ export default function Home() {
     }
 
     getPosts();
+
+    return () => window.removeEventListener("yavendelo-search", syncSearchFromTopBar);
   }, []);
 
   const filteredPosts = useMemo(() => {
@@ -208,6 +228,22 @@ export default function Home() {
     trackEvent("filters_cleared", { location: "home" });
   }
 
+  function submitHeroSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const cleanSearch = search.trim();
+
+    if (cleanSearch) {
+      window.history.replaceState({}, "", `/?q=${encodeURIComponent(cleanSearch)}#productos`);
+      trackEvent(analyticsEvents.search, {
+        search_term: cleanSearch,
+        query_length: cleanSearch.length,
+        location: "hero_submit",
+      });
+    }
+
+    document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   async function toggleFavorite(product: ProductPost) {
     if (!auth.currentUser) {
       toast.error("Inicia sesión para guardar favoritos");
@@ -272,11 +308,11 @@ export default function Home() {
 
             <div className={styles.heroSearchCard}>
               <label htmlFor="hero-search">¿Qué quieres encontrar hoy?</label>
-              <div className={styles.heroSearchRow}>
+              <form className={styles.heroSearchRow} onSubmit={submitHeroSearch}>
                 <input
                   id="hero-search"
                   type="search"
-                  placeholder="iPhone, moto, sala, consola..."
+                  placeholder="Busca iPhone, moto, sala o consola..."
                   value={search}
                   onChange={(event) => {
                     setSearch(event.target.value);
@@ -289,10 +325,10 @@ export default function Home() {
                     }
                   }}
                 />
-                <a href="#productos" className={styles.primaryButton}>
+                <button type="submit" className={styles.primaryButton}>
                   Buscar ofertas
-                </a>
-              </div>
+                </button>
+              </form>
               <p>Tip beta: no compartas códigos ni anticipos. Revisa el producto antes de pagar.</p>
             </div>
 
@@ -326,8 +362,8 @@ export default function Home() {
           <div className={styles.heroPanel} aria-label="Resumen de marketplace">
             <div className={styles.heroImage}>
               <Image
-                src="https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?q=80&w=1200&auto=format&fit=crop"
-                alt="Persona comprando en un marketplace desde su teléfono"
+                src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1200&auto=format&fit=crop"
+                alt="Persona usando una app de marketplace moderno desde su teléfono"
                 fill
                 priority
                 sizes="(max-width: 1100px) 100vw, 46vw"
