@@ -362,8 +362,8 @@ export default function Home() {
           <div className={styles.heroPanel} aria-label="Resumen de marketplace">
             <div className={styles.heroImage}>
               <Image
-                src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1200&auto=format&fit=crop"
-                alt="Persona usando una app de marketplace moderno desde su teléfono"
+                src="https://images.unsplash.com/photo-1578200308673-6c2cc33a697d?q=80&w=1200&auto=format&fit=crop"
+                alt="Persona usando una app móvil en una ciudad moderna"
                 fill
                 priority
                 sizes="(max-width: 1100px) 100vw, 46vw"

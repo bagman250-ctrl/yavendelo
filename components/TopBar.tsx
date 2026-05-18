@@ -112,15 +112,12 @@ export default function TopBar() {
 
   return (
     <header style={headerStyle}>
-      <div style={containerStyle}>
+      <div className="topbar-shell" style={containerStyle}>
         <div style={leftStyle}>
           <Link href="/" className="brand-link" style={{ textDecoration: "none", color: "white" }} aria-label="Ir al inicio">
             <div style={logoStyle}>
-              <span style={logoMark} aria-hidden="true">
-                <span style={logoSpark} />
-                <span style={logoCartLine} />
-              </span>
-              <span style={logoText}>YaVendelo</span>
+              <LogoIcon />
+              <span className="brand-text" style={logoText}>YaVendelo</span>
             </div>
           </Link>
 
@@ -132,21 +129,7 @@ export default function TopBar() {
           </nav>
         </div>
 
-        <div style={rightStyle}>
-          <form className="top-search-box" onSubmit={submitSearch} style={searchBox}>
-            <SearchIcon />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar iPhone, moto, sala..."
-              aria-label="Buscar productos"
-              style={searchInput}
-            />
-            <button type="submit" aria-label="Buscar" style={searchSubmit}>
-              Buscar
-            </button>
-          </form>
-
+        <div className="topbar-actions" style={rightStyle}>
           <div style={notificationWrap}>
             <button
               type="button"
@@ -157,11 +140,11 @@ export default function TopBar() {
               onClick={() => setNotificationsOpen((current) => !current)}
             >
               <BellIcon active={unreadCount > 0} />
-            {unreadCount > 0 && (
-              <span style={badgeStyle}>
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
+              {unreadCount > 0 && (
+                <span style={badgeStyle}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </button>
 
             {notificationsOpen && (
@@ -197,31 +180,77 @@ export default function TopBar() {
 
           <AuthButtons />
         </div>
+
+        <div className="topbar-search" style={searchSlot}>
+          <form className="top-search-box" onSubmit={submitSearch} style={searchBox}>
+            <SearchIcon />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar iPhone, moto, sala..."
+              aria-label="Buscar productos"
+              style={searchInput}
+            />
+            <button type="submit" aria-label="Buscar" style={searchSubmit}>
+              Buscar
+            </button>
+          </form>
+        </div>
       </div>
 
       <style jsx>{`
-        @media (max-width: 980px) {
+        @media (max-width: 1120px) {
           nav {
             display: none !important;
           }
         }
 
+        @media (max-width: 980px) {
+          header :global(.topbar-shell) {
+            grid-template-columns: 1fr auto !important;
+          }
+
+          header :global(.topbar-search) {
+            grid-column: 1 / -1 !important;
+            grid-row: 2 !important;
+          }
+        }
+
         @media (max-width: 760px) {
           .top-search-box {
-            order: 3;
             width: 100% !important;
             min-width: 100% !important;
+          }
+
+          header :global(.brand-text) {
+            font-size: 20px !important;
           }
         }
 
         @media (max-width: 520px) {
-          header :global(nav) {
-            display: none !important;
+          header :global(.topbar-shell) {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+          }
+
+          header :global(.topbar-search) {
+            grid-column: 1 !important;
+            grid-row: 3 !important;
+          }
+
+          header :global(.topbar-actions) {
+            grid-column: 1 !important;
+            grid-row: 2 !important;
+            justify-content: space-between !important;
+            width: 100% !important;
           }
         }
 
-        .brand-link:hover :global(span:first-child) {
+        .brand-link:hover :global(.logo-icon) {
           transform: translateY(-1px) scale(1.03);
+          box-shadow: 0 16px 38px rgba(255, 123, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.32);
         }
 
         .top-search-box:focus-within {
@@ -254,70 +283,51 @@ const headerStyle: React.CSSProperties = {
 };
 
 const containerStyle: React.CSSProperties = {
-  maxWidth: "1240px",
+  maxWidth: "1280px",
   margin: "0 auto",
   padding: "12px 24px",
+  display: "grid",
+  gridTemplateColumns: "minmax(310px, auto) minmax(280px, 420px) auto",
+  alignItems: "center",
+  gap: "18px",
+};
+
+const searchSlot: React.CSSProperties = {
+  minWidth: 0,
+  gridColumn: 2,
+  gridRow: 1,
+};
+
+const rightStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
-  gap: "20px",
-  flexWrap: "wrap",
+  gap: "10px",
+  justifyContent: "flex-end",
+  minWidth: 0,
+  gridColumn: 3,
+  gridRow: 1,
 };
 
 const leftStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "22px",
+  gap: "24px",
+  minWidth: 0,
+  gridColumn: 1,
+  gridRow: 1,
 };
 
 const logoStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "11px",
+  gap: "12px",
   fontWeight: "900",
   letterSpacing: "0",
   whiteSpace: "nowrap",
 };
 
-const logoMark: React.CSSProperties = {
-  position: "relative",
-  width: "38px",
-  height: "38px",
-  borderRadius: "8px",
-  background:
-    "linear-gradient(135deg, rgba(255,176,103,0.95), rgba(255,123,0,0.94)), radial-gradient(circle at 28% 20%, #fff4d8, transparent 28px)",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxShadow: "0 14px 34px rgba(255,123,0,0.32), inset 0 1px 0 rgba(255,255,255,0.28)",
-  overflow: "hidden",
-  transition: "transform 0.18s ease, box-shadow 0.18s ease",
-};
-
-const logoSpark: React.CSSProperties = {
-  position: "absolute",
-  width: "14px",
-  height: "14px",
-  borderRadius: "4px",
-  background: "#101010",
-  transform: "rotate(45deg)",
-  top: "9px",
-  left: "10px",
-};
-
-const logoCartLine: React.CSSProperties = {
-  position: "absolute",
-  width: "20px",
-  height: "10px",
-  borderLeft: "3px solid #101010",
-  borderBottom: "3px solid #101010",
-  borderRadius: "0 0 0 5px",
-  right: "8px",
-  bottom: "10px",
-};
-
 const logoText: React.CSSProperties = {
-  fontSize: "23px",
+  fontSize: "24px",
   letterSpacing: "0",
   background: "linear-gradient(180deg, #fff, #d9d9d9)",
   WebkitBackgroundClip: "text",
@@ -336,14 +346,6 @@ const navLink: React.CSSProperties = {
   fontWeight: "800",
   fontSize: "14px",
   transition: "color 0.2s ease",
-};
-
-const rightStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "12px",
-  flexWrap: "wrap",
-  justifyContent: "flex-end",
 };
 
 const notificationWrap: React.CSSProperties = {
@@ -395,8 +397,8 @@ const badgeStyle: React.CSSProperties = {
 const searchBox: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  minHeight: "44px",
-  minWidth: "300px",
+  minHeight: "46px",
+  width: "100%",
   background: "linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.045))",
   border: "1px solid rgba(255,255,255,0.12)",
   borderRadius: "8px",
@@ -512,6 +514,42 @@ function BellIcon({ active }: { active: boolean }) {
     </svg>
   );
 }
+
+function LogoIcon() {
+  return (
+    <span className="logo-icon" style={logoIconWrap} aria-hidden="true">
+      <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
+        <path
+          d="M9 6.5h18.7c1.1 0 2.2.5 2.9 1.4l4.6 5.7c.9 1.1.9 2.7 0 3.8L20.5 35.2c-1.2 1.5-3.4 1.6-4.8.2L6.6 26.3c-.6-.6-.9-1.4-.9-2.2V9.8c0-1.8 1.5-3.3 3.3-3.3Z"
+          fill="url(#tagGradient)"
+        />
+        <path d="M13.2 13.5h6.4l3.2 6.1 3.3-6.1h5.9L25.6 24v6.4h-5.8v-6.2l-6.6-10.7Z" fill="#101010" />
+        <path d="M29.8 11.6h.1" stroke="#101010" strokeWidth="3.8" strokeLinecap="round" />
+        <path d="m25.2 26.9 2.7 2.7 5.1-6" stroke="#101010" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+        <defs>
+          <linearGradient id="tagGradient" x1="6" y1="5" x2="35" y2="36" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#FFC078" />
+            <stop offset="0.45" stopColor="#FF7B00" />
+            <stop offset="1" stopColor="#FF4D00" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </span>
+  );
+}
+
+const logoIconWrap: React.CSSProperties = {
+  width: "42px",
+  height: "42px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "10px",
+  background: "rgba(255,123,0,0.08)",
+  boxShadow: "0 14px 34px rgba(255,123,0,0.28), inset 0 1px 0 rgba(255,255,255,0.14)",
+  transition: "transform 0.18s ease, box-shadow 0.18s ease",
+  flexShrink: 0,
+};
 
 function SearchIcon() {
   return (

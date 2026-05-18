@@ -88,6 +88,8 @@ export default function AuthButtons() {
           .auth-group a,
           .auth-group button {
             min-height: 40px !important;
+            padding-left: 10px !important;
+            padding-right: 10px !important;
           }
         }
       `}</style>
@@ -99,7 +101,9 @@ const authGroup: React.CSSProperties = {
   position: "relative",
   display: "flex",
   alignItems: "center",
-  gap: "10px",
+  gap: "8px",
+  minWidth: 0,
+  flexShrink: 0,
 };
 
 const ghostLink: React.CSSProperties = {
@@ -110,7 +114,7 @@ const ghostLink: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.1)",
   background: "rgba(255,255,255,0.06)",
   color: "white",
-  padding: "0 16px",
+  padding: "0 14px",
   textDecoration: "none",
   fontWeight: "900",
 };
@@ -132,11 +136,14 @@ const profileLink: React.CSSProperties = {
   borderRadius: "8px",
   padding: "4px 8px 4px 4px",
   cursor: "pointer",
+  minWidth: 0,
+  flexShrink: 1,
 };
 
 const userText: React.CSSProperties = {
   display: "grid",
-  maxWidth: "180px",
+  maxWidth: "150px",
+  minWidth: 0,
 };
 
 const logoutButton: React.CSSProperties = {
@@ -145,9 +152,10 @@ const logoutButton: React.CSSProperties = {
   cursor: "pointer",
   background: "rgba(255,255,255,0.06)",
   color: "white",
-  padding: "0 14px",
+  padding: "0 12px",
   borderRadius: "8px",
   fontWeight: "900",
+  flexShrink: 0,
 };
 
 const menuStyle: React.CSSProperties = {
