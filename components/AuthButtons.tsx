@@ -84,6 +84,13 @@ export default function AuthButtons() {
           }
         }
 
+        .auth-user-text strong,
+        .auth-user-text span {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
         @media (max-width: 520px) {
           .auth-group a,
           .auth-group button {
@@ -138,11 +145,12 @@ const profileLink: React.CSSProperties = {
   cursor: "pointer",
   minWidth: 0,
   flexShrink: 1,
+  maxWidth: "206px",
 };
 
 const userText: React.CSSProperties = {
   display: "grid",
-  maxWidth: "150px",
+  maxWidth: "136px",
   minWidth: 0,
 };
 
