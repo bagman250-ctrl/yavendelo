@@ -1,51 +1,12 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="YaVendelo YV">
-  <defs>
-    <linearGradient id="yv-bg" x1="12" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFB86A"/>
-      <stop offset="0.48" stop-color="#F97316"/>
-      <stop offset="1" stop-color="#9A3412"/>
-    </linearGradient>
-    <linearGradient id="yv-inner" x1="14" y1="10" x2="51" y2="55" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.34"/>
-      <stop offset="1" stop-color="#431407" stop-opacity="0.24"/>
-    </linearGradient>
-    <linearGradient id="yv-letter" x1="17" y1="17" x2="48" y2="46" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="1" stop-color="#FFE7CF"/>
-    </linearGradient>
-  </defs>
-
-  <rect width="64" height="64" rx="16" fill="#0B0B0B"/>
-  <path
-    d="M17 8H47C52 8 56 12 56 17V47C56 52 52 56 47 56H17C12 56 8 52 8 47V17C8 12 12 8 17 8Z"
-    fill="url(#yv-bg)"
-  />
-  <path
-    d="M17.75 9.5H46.25C50.8 9.5 54.5 13.2 54.5 17.75V46.25C54.5 50.8 50.8 54.5 46.25 54.5H17.75C13.2 54.5 9.5 50.8 9.5 46.25V17.75C9.5 13.2 13.2 9.5 17.75 9.5Z"
-    stroke="url(#yv-inner)"
-    stroke-width="1.5"
-  />
-  <path
-    d="M15.5 18.5H22.8L31.8 32.1L40.6 18.5H47.6L35.3 36.7V45.5H28.2V36.8L15.5 18.5Z"
-    fill="url(#yv-letter)"
-  />
-  <path
-    d="M41.6 18.5H49L39.2 45.5H31.8L41.6 18.5Z"
-    fill="url(#yv-letter)"
-  />
-  <path
-    d="M31.8 32.1L35.3 36.7V45.5H28.2V36.8L31.8 32.1Z"
-    fill="#FFF7ED"
-  />
-  <path
-    d="M48.5 14L49.9 17L53 18.4L49.9 19.8L48.5 23L47.1 19.8L44 18.4L47.1 17L48.5 14Z"
-    fill="#FFF7ED"
-  />
-  <path
-    d="M18 49.25H46"
-    stroke="#431407"
-    stroke-opacity="0.22"
-    stroke-width="1.8"
-    stroke-linecap="round"
-  />
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" rx="15" fill="#050505"/>
+  <rect x="7" y="7" width="50" height="50" rx="13.5" fill="#0A0A0A"/>
+  <rect x="8.75" y="8.75" width="46.5" height="46.5" rx="12" fill="none" stroke="#FF8A00" stroke-width="2.5"/>
+  <rect x="10.75" y="10.75" width="42.5" height="42.5" rx="10.5" fill="none" stroke="#FFB21A" stroke-opacity="0.2" stroke-width="1"/>
+  <path d="M15 17H23L32 30L28 36L15 17Z" fill="#FF8A00"/>
+  <path d="M41 17H49L35 36L31 30L41 17Z" fill="#FFB21A"/>
+  <path d="M28 36H35V47H28V36Z" fill="#F97316"/>
+  <path d="M31 30L35 36V47H28V36L31 30Z" fill="#FF7A00"/>
+  <path d="M43 17H51L39 47H31L43 17Z" fill="#FFFFFF"/>
+  <path d="M34 36L38 29L43 37L38 47L34 36Z" fill="#F3F3F3"/>
 </svg>
