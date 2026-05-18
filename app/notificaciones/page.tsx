@@ -125,7 +125,7 @@ export default function NotificacionesPage() {
             <div>
               <span style={eyebrow}>Centro de actividad</span>
               <h1 style={titleStyle}>Notificaciones</h1>
-              <p style={subtitleStyle}>Mensajes, favoritos, reportes y avisos importantes de tu cuenta.</p>
+              <p style={subtitleStyle}>Mensajes, favoritos, reportes y avisos importantes de tu cuenta beta.</p>
             </div>
 
             {user && unreadCount > 0 && (
@@ -156,7 +156,7 @@ export default function NotificacionesPage() {
             <EmptyState
               label="Sin actividad"
               title="Todo tranquilo por ahora."
-              text="Cuando tengas mensajes, favoritos o avisos nuevos, aparecerán aquí."
+              text="Cuando tengas mensajes, favoritos o avisos nuevos, aparecerán aquí. No hay acciones pendientes."
             />
           )}
 
@@ -270,7 +270,7 @@ const notificationCard: React.CSSProperties = {
   gap: "14px",
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.035))",
   padding: "18px",
   color: "white",
   cursor: "pointer",
@@ -324,7 +324,7 @@ const emptyCard: React.CSSProperties = {
   margin: "0 auto",
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   padding: "46px 24px",
   textAlign: "center",
 };
@@ -344,7 +344,7 @@ const emptyText: React.CSSProperties = {
 
 const primaryButton: React.CSSProperties = {
   border: "none",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   padding: "15px 18px",
   borderRadius: "8px",

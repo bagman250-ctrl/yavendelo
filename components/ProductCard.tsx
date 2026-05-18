@@ -63,7 +63,7 @@ export default function ProductCard({ product }: { product: Product }) {
     event.stopPropagation();
 
     if (!auth.currentUser) {
-      toast.error("Debes iniciar sesion");
+      toast.error("Inicia sesion para guardar favoritos");
       return;
     }
 
@@ -152,7 +152,8 @@ const card: React.CSSProperties = {
   overflow: "hidden",
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.035))",
+  boxShadow: "0 18px 45px rgba(0,0,0,0.18)",
 };
 
 const media: React.CSSProperties = {
@@ -187,6 +188,7 @@ const favoriteButton: React.CSSProperties = {
   cursor: "pointer",
   fontSize: "22px",
   fontWeight: "900",
+  backdropFilter: "blur(12px)",
 };
 
 const categoryBadge: React.CSSProperties = {

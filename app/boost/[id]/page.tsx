@@ -9,6 +9,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../firebase/config";
 import BottomNav from "../../../components/BottomNav";
 import TopBar from "../../../components/TopBar";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { BOOST_PLANS, BoostPlanId } from "../../../lib/boostPlans";
 
 type Post = {
@@ -79,6 +80,11 @@ export default function BoostPage() {
       setProcessingPlan(plan);
       localStorage.setItem("pendingBoostPostId", post.id);
       localStorage.setItem("pendingBoostPlan", plan);
+      trackEvent(analyticsEvents.boostClick, {
+        product_id: post.id,
+        plan,
+        value: planConfig.price,
+      });
 
       const response = await fetch("/api/mercadopago/create-preference", {
         method: "POST",
@@ -192,7 +198,7 @@ const containerStyle: React.CSSProperties = {
 const heroCard: React.CSSProperties = {
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   padding: "30px",
   marginBottom: "18px",
 };
@@ -228,7 +234,7 @@ const productCard: React.CSSProperties = {
   flexWrap: "wrap",
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.035))",
   padding: "16px",
   marginBottom: "18px",
 };
@@ -278,7 +284,7 @@ const plansGrid: React.CSSProperties = {
 const planCard: React.CSSProperties = {
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.035))",
   padding: "24px",
 };
 
@@ -321,7 +327,7 @@ const listStyle: React.CSSProperties = {
 const primaryButton: React.CSSProperties = {
   width: "100%",
   border: "none",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   padding: "15px 18px",
   borderRadius: "8px",

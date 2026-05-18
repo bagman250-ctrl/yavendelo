@@ -6,12 +6,14 @@ import toast from "react-hot-toast";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { auth, db } from "@/app/firebase/config";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 
 interface StartChatButtonProps {
   productId: string;
   productTitle?: string;
   sellerId?: string;
   sellerName?: string;
+  sellerPhotoURL?: string;
 }
 
 export default function StartChatButton({
@@ -19,6 +21,7 @@ export default function StartChatButton({
   productTitle = "Producto",
   sellerId = "vendedor",
   sellerName = "Vendedor",
+  sellerPhotoURL = "",
 }: StartChatButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -27,7 +30,7 @@ export default function StartChatButton({
     const currentUser = auth.currentUser;
 
     if (!currentUser) {
-      toast.error("Debes iniciar sesion para enviar mensaje");
+      toast.error("Inicia sesion para escribirle al vendedor");
       router.push("/login");
       return;
     }
@@ -41,7 +44,7 @@ export default function StartChatButton({
       const cleanSellerId = sellerId || "vendedor";
 
       if (cleanSellerId === buyerId) {
-        toast.error("Esta publicacion es tuya");
+        toast.error("Esta publicacion es tuya. Puedes administrarla desde tu perfil.");
         return;
       }
 
@@ -55,9 +58,11 @@ export default function StartChatButton({
           productTitle,
           sellerId: cleanSellerId,
           sellerName,
+          sellerPhotoURL,
           buyerId,
           buyerName,
           buyerEmail: currentUser.email,
+          buyerPhotoURL: currentUser.photoURL || "",
           participants: [buyerId, cleanSellerId],
           userName: sellerName,
           lastMessage: `Hola, me interesa: ${productTitle}`,
@@ -67,7 +72,8 @@ export default function StartChatButton({
         });
       }
 
-      toast.success("Chat abierto");
+      trackEvent(analyticsEvents.startChat, { product_id: productId });
+      toast.success("Chat abierto. Mantén el trato dentro de YaVendelo.");
       router.push(`/chat/${chatId}`);
     } catch (error) {
       console.error("Error iniciando chat:", error);

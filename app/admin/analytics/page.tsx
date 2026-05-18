@@ -292,7 +292,15 @@ function HealthRow({ label, value }: { label: string; value: string }) {
 }
 
 function BarList({ rows }: { rows: { name: string; count: number }[] }) {
-  if (rows.length === 0) return <div style={emptyState}>Sin datos suficientes.</div>;
+  if (rows.length === 0) {
+    return (
+      <div style={emptyState}>
+        <span style={emptyStateBadge}>Sin muestra</span>
+        <strong>Sin datos suficientes.</strong>
+        <p>Las barras aparecerán cuando existan publicaciones con categoría o ciudad.</p>
+      </div>
+    );
+  }
 
   const max = Math.max(...rows.map((row) => row.count), 1);
 
@@ -361,7 +369,7 @@ const heroSection: CSSProperties = {
   gap: "18px",
   flexWrap: "wrap",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   borderRadius: "8px",
   padding: "30px",
   marginBottom: "18px",
@@ -395,9 +403,10 @@ const statsGrid: CSSProperties = {
 
 const metricCard: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.035))",
   borderRadius: "8px",
   padding: "18px",
+  boxShadow: "0 18px 45px rgba(0,0,0,0.18)",
 };
 
 const metricLabel: CSSProperties = {
@@ -430,7 +439,7 @@ const columnsGrid: CSSProperties = {
 
 const panelStyle: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.04)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.028))",
   borderRadius: "8px",
   padding: "22px",
 };
@@ -449,7 +458,7 @@ const signalsGrid: CSSProperties = {
 
 const signalCard: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "rgba(255,255,255,0.045)",
   borderRadius: "8px",
   padding: "18px",
 };
@@ -518,14 +527,14 @@ const barTrack: CSSProperties = {
 
 const barFill: CSSProperties = {
   height: "100%",
-  background: "#ff7b00",
+  background: "linear-gradient(90deg, #ffb067, #ff7b00)",
   borderRadius: "999px",
 };
 
 const primaryButton: CSSProperties = {
   border: "none",
   cursor: "pointer",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   padding: "13px 16px",
   borderRadius: "8px",
@@ -584,10 +593,23 @@ const eyebrow: CSSProperties = {
 };
 
 const emptyState: CSSProperties = {
-  border: "1px dashed rgba(255,255,255,0.16)",
+  border: "1px dashed rgba(255,123,0,0.24)",
   borderRadius: "8px",
   padding: "26px",
   color: "#a7a7a7",
   textAlign: "center",
   fontWeight: "800",
+  background: "rgba(255,123,0,0.06)",
+};
+
+const emptyStateBadge: CSSProperties = {
+  display: "inline-flex",
+  borderRadius: "8px",
+  background: "rgba(255,123,0,0.12)",
+  border: "1px solid rgba(255,123,0,0.22)",
+  color: "#ffb067",
+  padding: "7px 9px",
+  fontSize: "12px",
+  fontWeight: "900",
+  marginBottom: "10px",
 };

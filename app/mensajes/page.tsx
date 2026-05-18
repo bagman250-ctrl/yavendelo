@@ -9,17 +9,42 @@ import toast from "react-hot-toast";
 import { auth, db } from "@/app/firebase/config";
 import BottomNav from "@/components/BottomNav";
 import TopBar from "@/components/TopBar";
+import UserAvatar from "@/components/UserAvatar";
+
+type DateLike = { seconds?: number } | number | string;
 
 type Conversation = {
   id: string;
   lastMessage?: string;
   unread?: boolean;
   productTitle?: string;
+  updatedAt?: DateLike;
   buyerId?: string;
   sellerId?: string;
   buyerName?: string;
   sellerName?: string;
+  buyerPhotoURL?: string;
+  sellerPhotoURL?: string;
 };
+
+function getDateValue(value?: DateLike) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") return Number(value) || 0;
+  return Number(value?.seconds || 0);
+}
+
+function formatConversationDate(value?: DateLike) {
+  const rawValue = getDateValue(value);
+  if (!rawValue) return "Reciente";
+
+  const millis = rawValue < 10000000000 ? rawValue * 1000 : rawValue;
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(millis));
+}
 
 export default function MensajesPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -75,7 +100,24 @@ export default function MensajesPage() {
     };
   }, []);
 
-  if (loading) return <main style={centerPage}>Cargando mensajes...</main>;
+  if (loading) {
+    return (
+      <>
+        <TopBar />
+        <main style={pageStyle}>
+          <section style={containerStyle}>
+            <div style={headerStyle}>
+              <span style={eyebrow}>Mensajes</span>
+              <h1 style={titleStyle}>Conversaciones</h1>
+              <p style={subtitleStyle}>Cargando tus chats de compra y venta...</p>
+            </div>
+            <MessagesSkeleton />
+          </section>
+        </main>
+        <BottomNav />
+      </>
+    );
+  }
 
   if (!user) {
     return (
@@ -105,16 +147,22 @@ export default function MensajesPage() {
       <main className="fade-in" style={pageStyle}>
         <section style={containerStyle}>
           <div style={headerStyle}>
-            <span style={eyebrow}>Mensajes</span>
-            <h1 style={titleStyle}>Conversaciones</h1>
-            <p style={subtitleStyle}>Gestiona preguntas, acuerdos y seguimiento de tus compras o ventas.</p>
+            <div>
+              <span style={eyebrow}>Mensajes</span>
+              <h1 style={titleStyle}>Conversaciones</h1>
+              <p style={subtitleStyle}>Gestiona preguntas, acuerdos y seguimiento de tus compras o ventas.</p>
+            </div>
+            <div style={securityPill}>No compartas códigos ni anticipos</div>
           </div>
 
           {conversations.length === 0 ? (
             <div style={emptyCard}>
               <span style={eyebrow}>Sin conversaciones</span>
               <h2 style={emptyTitle}>Todavía no hay mensajes.</h2>
-              <p style={emptyText}>Cuando alguien te escriba, aparecerá aquí con el producto relacionado.</p>
+              <p style={emptyText}>
+                Cuando alguien te escriba, aparecerá aquí con el producto relacionado. Mantén los acuerdos dentro del chat
+                y evita compartir códigos, depósitos o anticipos.
+              </p>
               <Link href="/" style={{ textDecoration: "none" }}>
                 <button type="button" style={primaryButton}>
                   Explorar productos
@@ -125,15 +173,24 @@ export default function MensajesPage() {
             <div style={listStyle}>
               {conversations.map((conversation) => {
                 const otherUser = conversation.buyerId === user.uid ? conversation.sellerName : conversation.buyerName;
+                const otherPhoto =
+                  conversation.buyerId === user.uid ? conversation.sellerPhotoURL : conversation.buyerPhotoURL;
+                const otherRole = conversation.buyerId === user.uid ? "Vendedor" : "Comprador";
 
                 return (
                   <Link key={conversation.id} href={`/chat/${conversation.id}`} style={{ textDecoration: "none" }}>
-                    <article style={conversationCard}>
-                      <div style={avatar}>{otherUser?.charAt(0).toUpperCase() || "U"}</div>
+                    <article className="conversation-card" style={conversationCard}>
+                      <UserAvatar name={otherUser} photoURL={otherPhoto} size={60} label={`Avatar de ${otherRole.toLowerCase()}`} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={conversationTop}>
-                          <h2 style={userName}>{otherUser || "Usuario"}</h2>
-                          {conversation.unread && <span style={unreadBadge}>Nuevo</span>}
+                          <div style={{ minWidth: 0 }}>
+                            <h2 style={userName}>{otherUser || "Usuario"}</h2>
+                            <p style={roleText}>{otherRole} · {formatConversationDate(conversation.updatedAt)}</p>
+                          </div>
+                          <div style={rightMeta}>
+                            {conversation.unread && <span style={unreadBadge}>Nuevo</span>}
+                            <span style={chevronStyle}>Abrir</span>
+                          </div>
                         </div>
                         {conversation.productTitle && <span style={productBadge}>{conversation.productTitle}</span>}
                         <p style={messageStyle}>{conversation.lastMessage || "Sin mensajes todavía"}</p>
@@ -147,8 +204,39 @@ export default function MensajesPage() {
         </section>
 
         <BottomNav />
+        <style jsx>{`
+          .conversation-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 123, 0, 0.34) !important;
+            box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
+          }
+
+          @media (max-width: 720px) {
+            .conversation-card {
+              align-items: flex-start !important;
+              padding: 16px !important;
+            }
+          }
+        `}</style>
       </main>
     </>
+  );
+}
+
+function MessagesSkeleton() {
+  return (
+    <div style={listStyle}>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <div key={index} style={skeletonCard}>
+          <div style={skeletonAvatar} />
+          <div style={{ flex: 1 }}>
+            <div style={{ ...skeletonLine, width: "44%", height: "20px" }} />
+            <div style={{ ...skeletonLine, width: "68%" }} />
+            <div style={{ ...skeletonLine, width: index % 2 === 0 ? "86%" : "58%" }} />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -159,20 +247,17 @@ const pageStyle: React.CSSProperties = {
   padding: "42px 24px 140px",
 };
 
-const centerPage: React.CSSProperties = {
-  ...pageStyle,
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  fontWeight: "900",
-};
-
 const containerStyle: React.CSSProperties = {
-  maxWidth: "960px",
+  maxWidth: "980px",
   margin: "0 auto",
 };
 
 const headerStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-end",
+  gap: "18px",
+  flexWrap: "wrap",
   marginBottom: "28px",
 };
 
@@ -195,8 +280,19 @@ const titleStyle: React.CSSProperties = {
 };
 
 const subtitleStyle: React.CSSProperties = {
+  maxWidth: "620px",
   color: "#bdbdbd",
   lineHeight: 1.7,
+};
+
+const securityPill: React.CSSProperties = {
+  border: "1px solid rgba(255,123,0,0.24)",
+  background: "rgba(255,123,0,0.1)",
+  color: "#ffd2a3",
+  borderRadius: "8px",
+  padding: "11px 12px",
+  fontSize: "13px",
+  fontWeight: "900",
 };
 
 const listStyle: React.CSSProperties = {
@@ -210,36 +306,41 @@ const conversationCard: React.CSSProperties = {
   gap: "16px",
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background:
+    "linear-gradient(135deg, rgba(255,123,0,0.08), transparent 42%), linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   padding: "18px",
   color: "white",
-};
-
-const avatar: React.CSSProperties = {
-  width: "58px",
-  height: "58px",
-  borderRadius: "8px",
-  background: "#ff7b00",
-  color: "#101010",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontWeight: "900",
-  fontSize: "22px",
-  flexShrink: 0,
+  transition: "transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease",
 };
 
 const conversationTop: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   gap: "12px",
-  alignItems: "center",
+  alignItems: "flex-start",
 };
 
 const userName: React.CSSProperties = {
   margin: 0,
   fontSize: "20px",
   fontWeight: "900",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const roleText: React.CSSProperties = {
+  margin: "5px 0 0",
+  color: "#8f8f8f",
+  fontSize: "12px",
+  fontWeight: "900",
+};
+
+const rightMeta: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  flexShrink: 0,
 };
 
 const productBadge: React.CSSProperties = {
@@ -255,7 +356,7 @@ const productBadge: React.CSSProperties = {
 
 const messageStyle: React.CSSProperties = {
   margin: "10px 0 0",
-  color: "#a7a7a7",
+  color: "#c2c2c2",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -263,8 +364,18 @@ const messageStyle: React.CSSProperties = {
 
 const unreadBadge: React.CSSProperties = {
   borderRadius: "8px",
-  background: "#ff3b30",
-  color: "white",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
+  color: "#101010",
+  padding: "6px 8px",
+  fontSize: "12px",
+  fontWeight: "900",
+};
+
+const chevronStyle: React.CSSProperties = {
+  borderRadius: "8px",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.05)",
+  color: "#d7d7d7",
   padding: "6px 8px",
   fontSize: "12px",
   fontWeight: "900",
@@ -275,7 +386,7 @@ const emptyCard: React.CSSProperties = {
   margin: "0 auto",
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   padding: "46px 24px",
   textAlign: "center",
 };
@@ -295,10 +406,32 @@ const emptyText: React.CSSProperties = {
 
 const primaryButton: React.CSSProperties = {
   border: "none",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   padding: "15px 18px",
   borderRadius: "8px",
   fontWeight: "900",
   cursor: "pointer",
+};
+
+const skeletonCard: React.CSSProperties = {
+  ...conversationCard,
+  pointerEvents: "none",
+};
+
+const skeletonAvatar: React.CSSProperties = {
+  width: "60px",
+  height: "60px",
+  borderRadius: "8px",
+  background: "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.12), rgba(255,255,255,0.05))",
+  backgroundSize: "200% 100%",
+  animation: "pulsePremium 1.8s ease-in-out infinite",
+  flexShrink: 0,
+};
+
+const skeletonLine: React.CSSProperties = {
+  height: "14px",
+  marginBottom: "12px",
+  borderRadius: "8px",
+  background: "rgba(255,255,255,0.1)",
 };

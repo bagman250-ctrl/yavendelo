@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
@@ -8,13 +8,16 @@ import { addDoc, collection, doc, getDoc, onSnapshot, orderBy, query, serverTime
 
 import { auth, db } from "@/app/firebase/config";
 import BottomNav from "@/components/BottomNav";
+import SafeTradeNote from "@/components/SafeTradeNote";
 import TopBar from "@/components/TopBar";
+import UserAvatar from "@/components/UserAvatar";
 
 type Message = {
   id: string;
   text: string;
   sender: string;
   senderId?: string;
+  createdAt?: { seconds?: number } | number | string;
 };
 
 type Conversation = {
@@ -22,7 +25,28 @@ type Conversation = {
   productTitle?: string;
   buyerId?: string;
   sellerId?: string;
+  buyerName?: string;
+  sellerName?: string;
+  buyerPhotoURL?: string;
+  sellerPhotoURL?: string;
 };
+
+function getDateValue(value?: Message["createdAt"]) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") return Number(value) || 0;
+  return Number(value?.seconds || 0);
+}
+
+function formatMessageTime(value?: Message["createdAt"]) {
+  const rawValue = getDateValue(value);
+  if (!rawValue) return "";
+
+  const millis = rawValue < 10000000000 ? rawValue * 1000 : rawValue;
+  return new Intl.DateTimeFormat("es-MX", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(millis));
+}
 
 export default function ChatPage() {
   const params = useParams<{ id: string }>();
@@ -34,10 +58,13 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  const currentUser = useMemo(
-    () => auth.currentUser?.displayName || auth.currentUser?.email || "Usuario",
-    []
-  );
+  const currentUser = auth.currentUser?.displayName || auth.currentUser?.email || "Usuario";
+  const currentPhotoURL = auth.currentUser?.photoURL || "";
+  const otherUserName =
+    conversation?.sellerId === auth.currentUser?.uid ? conversation?.buyerName : conversation?.sellerName;
+  const otherUserPhoto =
+    conversation?.sellerId === auth.currentUser?.uid ? conversation?.buyerPhotoURL : conversation?.sellerPhotoURL;
+  const otherUserRole = conversation?.sellerId === auth.currentUser?.uid ? "Comprador" : "Vendedor";
 
   useEffect(() => {
     if (!chatId) return;
@@ -159,30 +186,64 @@ export default function ChatPage() {
       <main className="fade-in" style={pageStyle}>
         <section style={chatShell}>
           <header style={headerStyle}>
-            <div style={avatar}>{currentUser.charAt(0).toUpperCase()}</div>
-            <div>
+            <Link href="/mensajes" className="back-button" style={backButton}>
+              Volver
+            </Link>
+            <UserAvatar
+              name={otherUserName}
+              photoURL={otherUserPhoto}
+              size={54}
+              label={`Avatar de ${otherUserRole.toLowerCase()}`}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={roleText}>{otherUserRole}</p>
               <h1 style={chatTitle}>{conversation?.productTitle || "Conversación"}</h1>
-              <p style={onlineText}>Chat en tiempo real</p>
+              <p style={onlineText}>Chat en tiempo real · No compartas códigos ni anticipos</p>
             </div>
           </header>
 
           <div style={messagesContainer}>
-            {loading && [1, 2, 3, 4].map((item) => <div key={item} style={item % 2 === 0 ? skeletonRight : skeletonLeft} />)}
+            <div style={safetyBanner}>
+              <strong>Compra y vende con precaución</strong>
+              <span>No compartas códigos ni anticipos. Revisa el producto antes de pagar.</span>
+            </div>
+
+            {loading &&
+              [1, 2, 3, 4].map((item) => (
+                <div key={item} style={item % 2 === 0 ? skeletonRight : skeletonLeft}>
+                  <div style={skeletonInner} />
+                </div>
+              ))}
 
             {!loading && messages.length === 0 && (
               <div style={emptyInline}>
+                <SafeTradeNote compact title="Antes de cerrar trato" />
                 <h2 style={emptyInlineTitle}>Inicia la conversación</h2>
-                <p style={emptyText}>Escribe el primer mensaje para resolver dudas sobre el producto.</p>
+                <p style={emptyText}>
+                  Pregunta por estado, entrega y forma de pago. Mantén la conversación dentro de YaVendelo.
+                </p>
               </div>
             )}
 
             {messages.map((message) => {
               const isMine = message.senderId === auth.currentUser?.uid;
+              const messagePhoto = isMine
+                ? currentPhotoURL
+                : conversation?.sellerId === message.senderId
+                  ? conversation?.sellerPhotoURL
+                  : conversation?.buyerPhotoURL;
 
               return (
-                <div key={message.id} style={{ alignSelf: isMine ? "flex-end" : "flex-start", maxWidth: "78%" }}>
-                  <div style={isMine ? myBubble : otherBubble}>{message.text}</div>
-                  <div style={{ ...metaText, textAlign: isMine ? "right" : "left" }}>{isMine ? "Tú" : message.sender}</div>
+                <div key={message.id} style={{ ...messageRow, alignSelf: isMine ? "flex-end" : "flex-start" }}>
+                  {!isMine && <UserAvatar name={message.sender} photoURL={messagePhoto} size={34} />}
+                  <div style={{ maxWidth: "78%" }}>
+                    <div style={isMine ? myBubble : otherBubble}>{message.text}</div>
+                    <div style={{ ...metaText, textAlign: isMine ? "right" : "left" }}>
+                      {isMine ? "Tú" : message.sender}
+                      {formatMessageTime(message.createdAt) ? ` · ${formatMessageTime(message.createdAt)}` : ""}
+                    </div>
+                  </div>
+                  {isMine && <UserAvatar name={currentUser} photoURL={messagePhoto} size={34} />}
                 </div>
               );
             })}
@@ -191,22 +252,34 @@ export default function ChatPage() {
           </div>
 
           <footer style={inputContainer}>
-            <input
-              value={text}
-              onChange={(event) => setText(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") sendMessage();
-              }}
-              placeholder="Escribe un mensaje..."
-              style={inputStyle}
-            />
-            <button type="button" onClick={sendMessage} disabled={sending} style={{ ...sendButton, opacity: sending ? 0.7 : 1 }}>
+            <div style={inputWrap}>
+              <input
+                value={text}
+                onChange={(event) => setText(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") sendMessage();
+                }}
+                placeholder="Escribe un mensaje seguro..."
+                aria-label="Mensaje"
+                style={inputStyle}
+              />
+              <span style={inputHint}>Evita códigos, contraseñas o anticipos.</span>
+            </div>
+            <button type="button" onClick={sendMessage} disabled={sending || !text.trim()} style={{ ...sendButton, opacity: sending || !text.trim() ? 0.7 : 1 }}>
               {sending ? "..." : "Enviar"}
             </button>
           </footer>
         </section>
 
         <BottomNav />
+        <style jsx>{`
+          @media (max-width: 720px) {
+            .back-button {
+              width: 100% !important;
+              order: -2;
+            }
+          }
+        `}</style>
       </main>
     </>
   );
@@ -228,7 +301,8 @@ const chatShell: React.CSSProperties = {
   flexDirection: "column",
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background:
+    "linear-gradient(135deg, rgba(255,123,0,0.08), transparent 42%), linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.035))",
   overflow: "hidden",
   boxShadow: "0 24px 70px rgba(0,0,0,0.35)",
 };
@@ -242,23 +316,36 @@ const headerStyle: React.CSSProperties = {
   background: "rgba(0,0,0,0.22)",
 };
 
-const avatar: React.CSSProperties = {
-  width: "52px",
-  height: "52px",
-  borderRadius: "8px",
-  background: "#ff7b00",
-  color: "#101010",
-  display: "flex",
+const backButton: React.CSSProperties = {
+  minHeight: "42px",
+  display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
+  borderRadius: "8px",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.06)",
+  color: "#ffffff",
+  padding: "0 13px",
+  fontSize: "13px",
   fontWeight: "900",
-  fontSize: "22px",
+  textDecoration: "none",
+};
+
+const roleText: React.CSSProperties = {
+  margin: "0 0 4px",
+  color: "#ffb067",
+  fontSize: "12px",
+  fontWeight: "900",
+  textTransform: "uppercase",
 };
 
 const chatTitle: React.CSSProperties = {
   margin: "0 0 4px",
   fontSize: "22px",
   fontWeight: "900",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 };
 
 const onlineText: React.CSSProperties = {
@@ -276,6 +363,18 @@ const messagesContainer: React.CSSProperties = {
   gap: "14px",
 };
 
+const safetyBanner: React.CSSProperties = {
+  display: "grid",
+  gap: "4px",
+  border: "1px solid rgba(255,123,0,0.24)",
+  background: "rgba(255,123,0,0.1)",
+  color: "#ffd2a3",
+  borderRadius: "8px",
+  padding: "13px 14px",
+  fontSize: "13px",
+  lineHeight: 1.5,
+};
+
 const bubbleBase: React.CSSProperties = {
   padding: "14px 16px",
   borderRadius: "8px",
@@ -283,16 +382,24 @@ const bubbleBase: React.CSSProperties = {
   wordBreak: "break-word",
 };
 
+const messageRow: React.CSSProperties = {
+  display: "flex",
+  alignItems: "flex-end",
+  gap: "8px",
+  maxWidth: "88%",
+};
+
 const myBubble: React.CSSProperties = {
   ...bubbleBase,
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   fontWeight: "800",
 };
 
 const otherBubble: React.CSSProperties = {
   ...bubbleBase,
-  background: "rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.09)",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "white",
 };
 
@@ -305,15 +412,25 @@ const metaText: React.CSSProperties = {
 
 const skeletonLeft: React.CSSProperties = {
   width: "45%",
-  height: "54px",
+  minHeight: "54px",
   borderRadius: "8px",
   background: "rgba(255,255,255,0.08)",
+  padding: "14px",
 };
 
 const skeletonRight: React.CSSProperties = {
   ...skeletonLeft,
   width: "64%",
   alignSelf: "flex-end",
+};
+
+const skeletonInner: React.CSSProperties = {
+  width: "76%",
+  height: "14px",
+  borderRadius: "8px",
+  background: "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.12), rgba(255,255,255,0.05))",
+  backgroundSize: "200% 100%",
+  animation: "pulsePremium 1.8s ease-in-out infinite",
 };
 
 const inputContainer: React.CSSProperties = {
@@ -324,8 +441,13 @@ const inputContainer: React.CSSProperties = {
   gap: "10px",
 };
 
-const inputStyle: React.CSSProperties = {
+const inputWrap: React.CSSProperties = {
   flex: 1,
+  display: "grid",
+  gap: "7px",
+};
+
+const inputStyle: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.12)",
   background: "#101010",
   color: "white",
@@ -335,14 +457,21 @@ const inputStyle: React.CSSProperties = {
   fontSize: "15px",
 };
 
+const inputHint: React.CSSProperties = {
+  color: "#8f8f8f",
+  fontSize: "12px",
+  fontWeight: "800",
+};
+
 const sendButton: React.CSSProperties = {
   border: "none",
   borderRadius: "8px",
   padding: "0 18px",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   fontWeight: "900",
   cursor: "pointer",
+  minWidth: "104px",
 };
 
 const emptyCard: React.CSSProperties = {
@@ -392,7 +521,7 @@ const emptyText: React.CSSProperties = {
 
 const primaryButton: React.CSSProperties = {
   border: "none",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   padding: "15px 18px",
   borderRadius: "8px",

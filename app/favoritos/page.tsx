@@ -7,6 +7,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 
 import { auth, db } from "../firebase/config";
 import BottomNav from "../../components/BottomNav";
+import PremiumLoading from "../../components/PremiumLoading";
 import TopBar from "../../components/TopBar";
 
 type Favorite = {
@@ -61,7 +62,7 @@ export default function FavoritosPage() {
     return () => unsubscribe();
   }, []);
 
-  if (loading) return <main style={centerPage}>Cargando favoritos...</main>;
+  if (loading) return <PremiumLoading label="Cargando favoritos..." />;
 
   if (!user) {
     return (
@@ -71,7 +72,7 @@ export default function FavoritosPage() {
           <section style={emptyCard}>
             <span style={eyebrow}>Favoritos</span>
             <h1 style={emptyTitle}>Inicia sesión para guardar productos.</h1>
-            <p style={emptyText}>Tus favoritos se sincronizan con tu cuenta y quedan listos para comparar después.</p>
+            <p style={emptyText}>Tus favoritos se sincronizan con tu cuenta y quedan listos para comparar despues.</p>
             <Link href="/login" style={{ textDecoration: "none" }}>
               <button type="button" style={primaryButton}>
                 Iniciar sesión
@@ -94,11 +95,11 @@ export default function FavoritosPage() {
             <div>
               <span style={eyebrow}>Guardados</span>
               <h1 style={titleStyle}>Tus favoritos</h1>
-              <p style={subtitleStyle}>Productos que guardaste para revisar, comparar o contactar más tarde.</p>
+              <p style={subtitleStyle}>Productos que guardaste para revisar, comparar o contactar mas tarde.</p>
             </div>
             <Link href="/" style={{ textDecoration: "none" }}>
               <button type="button" style={secondaryButton}>
-                Explorar más
+                Explorar mas
               </button>
             </Link>
           </div>
@@ -106,8 +107,8 @@ export default function FavoritosPage() {
           {favorites.length === 0 ? (
             <div style={emptyCard}>
               <span style={eyebrow}>Sin favoritos</span>
-              <h2 style={emptyTitle}>Aún no has guardado productos.</h2>
-              <p style={emptyText}>Cuando algo te interese, toca Guardar en la ficha del producto.</p>
+              <h2 style={emptyTitle}>Aun no has guardado productos.</h2>
+              <p style={emptyText}>Guarda opciones para comparar precio, ubicacion y vendedor antes de escribir.</p>
               <Link href="/" style={{ textDecoration: "none" }}>
                 <button type="button" style={primaryButton}>
                   Ver productos
@@ -119,7 +120,13 @@ export default function FavoritosPage() {
               {favorites.map((item) => (
                 <Link key={item.id} href={`/producto/${item.productId}`} style={cardLink}>
                   <article style={cardStyle}>
-                    <img src={item.imagen || "/placeholder.png"} alt={item.titulo || "Producto guardado"} style={imageStyle} />
+                    <img
+                      src={item.imagen || "/placeholder.png"}
+                      alt={item.titulo || "Producto guardado"}
+                      style={imageStyle}
+                      loading="lazy"
+                      decoding="async"
+                    />
                     <div style={cardBody}>
                       <span style={categoryBadge}>{item.categoria || "Producto"}</span>
                       <h2 style={cardTitle}>{item.titulo || "Producto disponible"}</h2>
@@ -144,14 +151,6 @@ const pageStyle: React.CSSProperties = {
   background: "linear-gradient(180deg, rgba(255,123,0,0.08), transparent 380px), #070707",
   color: "white",
   padding: "42px 24px 140px",
-};
-
-const centerPage: React.CSSProperties = {
-  ...pageStyle,
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  fontWeight: "900",
 };
 
 const containerStyle: React.CSSProperties = {
@@ -207,7 +206,8 @@ const cardStyle: React.CSSProperties = {
   overflow: "hidden",
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.035))",
+  transition: "transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease",
 };
 
 const imageStyle: React.CSSProperties = {
@@ -255,7 +255,7 @@ const emptyCard: React.CSSProperties = {
   margin: "0 auto",
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   padding: "46px 24px",
   textAlign: "center",
 };
@@ -275,7 +275,7 @@ const emptyText: React.CSSProperties = {
 
 const primaryButton: React.CSSProperties = {
   border: "none",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   padding: "15px 18px",
   borderRadius: "8px",

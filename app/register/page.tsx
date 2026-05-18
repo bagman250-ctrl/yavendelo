@@ -13,6 +13,7 @@ import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { auth, db, googleProvider } from "../firebase/config";
 import TopBar from "../../components/TopBar";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -23,7 +24,7 @@ export default function RegisterPage() {
 
   async function register() {
     if (!name.trim() || !email.trim() || !password.trim()) {
-      toast.error("Completa todos los campos");
+      toast.error("Completa nombre, correo y contraseña");
       return;
     }
 
@@ -74,7 +75,7 @@ export default function RegisterPage() {
         return;
       }
 
-      toast.error("Error al crear cuenta");
+      toast.error("No se pudo crear la cuenta. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -104,6 +105,7 @@ export default function RegisterPage() {
       );
 
       toast.success("Sesión iniciada con Google");
+      trackEvent(analyticsEvents.registerGoogle, { method: "google" });
       window.location.href = "/";
     } catch (error) {
       console.error("Error con Google:", error);
@@ -131,7 +133,7 @@ export default function RegisterPage() {
 
       <main className="fade-in" style={pageStyle}>
         <section style={cardStyle}>
-          <div style={badgeStyle}>Nueva cuenta</div>
+          <div style={badgeStyle}>Beta privada</div>
 
           <h1 style={titleStyle}>Únete a YaVendelo.</h1>
 
@@ -167,6 +169,8 @@ export default function RegisterPage() {
               value={name}
               onChange={(event) => setName(event.target.value)}
               style={inputStyle}
+              aria-label="Nombre"
+              autoComplete="name"
             />
           </label>
 
@@ -178,6 +182,8 @@ export default function RegisterPage() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               style={inputStyle}
+              aria-label="Correo electronico"
+              autoComplete="email"
             />
           </label>
 
@@ -192,6 +198,8 @@ export default function RegisterPage() {
                 if (event.key === "Enter") register();
               }}
               style={inputStyle}
+              aria-label="Contraseña"
+              autoComplete="new-password"
             />
           </label>
 
@@ -232,7 +240,7 @@ const pageStyle: React.CSSProperties = {
 const cardStyle: React.CSSProperties = {
   width: "100%",
   maxWidth: "500px",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   border: "1px solid rgba(255,255,255,0.1)",
   borderRadius: "8px",
   padding: "34px",
@@ -326,7 +334,7 @@ const labelStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
-  background: "#101010",
+  background: "rgba(16,16,16,0.92)",
   border: "1px solid rgba(255,255,255,0.12)",
   borderRadius: "8px",
   padding: "15px",
@@ -338,7 +346,7 @@ const inputStyle: React.CSSProperties = {
 const buttonStyle: React.CSSProperties = {
   width: "100%",
   border: "none",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   padding: "16px",
   borderRadius: "8px",

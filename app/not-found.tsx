@@ -13,13 +13,20 @@ export default function NotFound() {
           <span style={eyebrow}>404</span>
           <h1 style={titleStyle}>Pagina no encontrada</h1>
           <p style={textStyle}>
-            La publicacion o seccion que buscas ya no esta disponible.
+            La publicacion o seccion que buscas ya no esta disponible. Si llegaste desde una prueba beta, reportalo.
           </p>
-          <Link href="/" style={{ textDecoration: "none" }}>
-            <button type="button" style={buttonStyle}>
-              Volver al catalogo
-            </button>
-          </Link>
+          <div style={actionsStyle}>
+            <Link href="/" style={{ textDecoration: "none" }}>
+              <button type="button" style={buttonStyle}>
+                Volver al catalogo
+              </button>
+            </Link>
+            <Link href="/beta#feedback" style={{ textDecoration: "none" }}>
+              <button type="button" style={secondaryButton}>
+                Reportar problema
+              </button>
+            </Link>
+          </div>
         </section>
       </main>
 
@@ -43,7 +50,7 @@ const cardStyle: React.CSSProperties = {
   width: "100%",
   maxWidth: "560px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   borderRadius: "8px",
   padding: "32px",
   textAlign: "center",
@@ -75,10 +82,24 @@ const textStyle: React.CSSProperties = {
 
 const buttonStyle: React.CSSProperties = {
   border: "none",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   padding: "14px 18px",
   borderRadius: "8px",
   cursor: "pointer",
   fontWeight: "900",
+};
+
+const actionsStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "center",
+  gap: "10px",
+  flexWrap: "wrap",
+};
+
+const secondaryButton: React.CSSProperties = {
+  ...buttonStyle,
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(255,255,255,0.06)",
+  color: "white",
 };

@@ -8,6 +8,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import BottomNav from "../../../components/BottomNav";
 import TopBar from "../../../components/TopBar";
+import { getCategoryBySlugOrLabel } from "@/lib/categories";
 
 type CategoryPost = {
   id: string;
@@ -32,7 +33,10 @@ function formatPrice(value?: number | string) {
 
 export default function CategoryPage() {
   const params = useParams<{ slug: string }>();
-  const categoryName = decodeURIComponent(params.slug || "");
+  const rawCategory = decodeURIComponent(params.slug || "");
+  const knownCategory = getCategoryBySlugOrLabel(rawCategory);
+  const categoryName = knownCategory?.label || rawCategory;
+  const categoryIcon = knownCategory?.icon;
   const [posts, setPosts] = useState<CategoryPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -87,7 +91,7 @@ export default function CategoryPage() {
         <section style={containerStyle}>
           <div style={heroCard}>
             <span style={eyebrow}>Categoría</span>
-            <h1 style={titleStyle}>{categoryName}</h1>
+            <h1 style={titleStyle}>{categoryIcon ? `${categoryIcon} ${categoryName}` : categoryName}</h1>
             <p style={subtitleStyle}>Explora productos publicados en esta categoría y filtra dentro de los resultados.</p>
             <input
               type="search"

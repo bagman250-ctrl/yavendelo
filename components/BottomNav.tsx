@@ -6,6 +6,7 @@ import { User, onAuthStateChanged } from "firebase/auth";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 
 import { auth, db } from "@/app/firebase/config";
+import UserAvatar from "./UserAvatar";
 
 export default function BottomNav() {
   const [user, setUser] = useState<User | null>(null);
@@ -73,7 +74,17 @@ export default function BottomNav() {
         </Link>
 
         <Link href="/perfil" style={link}>
-          <div style={icon}>◎</div>
+          {user ? (
+            <UserAvatar
+              name={user.displayName}
+              email={user.email}
+              photoURL={user.photoURL}
+              size={30}
+              label="Perfil"
+            />
+          ) : (
+            <div style={icon}>◎</div>
+          )}
           <span style={text}>Perfil</span>
         </Link>
       </nav>
@@ -96,7 +107,7 @@ const navStyle: React.CSSProperties = {
   transform: "translateX(-50%)",
   width: "94%",
   maxWidth: "520px",
-  background: "rgba(15,15,15,0.94)",
+  background: "rgba(15,15,15,0.92)",
   backdropFilter: "blur(18px)",
   border: "1px solid rgba(255,255,255,0.1)",
   borderRadius: "8px",
@@ -105,7 +116,7 @@ const navStyle: React.CSSProperties = {
   justifyContent: "space-around",
   alignItems: "center",
   zIndex: 9999,
-  boxShadow: "0 10px 40px rgba(0,0,0,0.45)",
+  boxShadow: "0 18px 55px rgba(0,0,0,0.55)",
 };
 
 const link: React.CSSProperties = {
@@ -117,10 +128,19 @@ const link: React.CSSProperties = {
   gap: "5px",
   fontSize: "12px",
   fontWeight: "800",
+  minWidth: "58px",
 };
 
 const icon: React.CSSProperties = {
-  fontSize: "23px",
+  width: "30px",
+  height: "30px",
+  borderRadius: "8px",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.04)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "18px",
   lineHeight: 1,
 };
 
@@ -132,7 +152,7 @@ const plusButton: React.CSSProperties = {
   width: "62px",
   height: "62px",
   borderRadius: "8px",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   display: "flex",
   justifyContent: "center",

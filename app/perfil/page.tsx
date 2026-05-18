@@ -3,12 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { User, onAuthStateChanged, signOut } from "firebase/auth";
-import { collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { User, onAuthStateChanged, signOut, updateProfile } from "firebase/auth";
+import { collection, doc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
-import { auth, db } from "../firebase/config";
+import { auth, db, storage } from "../firebase/config";
 import BottomNav from "../../components/BottomNav";
+import PremiumLoading from "../../components/PremiumLoading";
+import SafeTradeNote from "../../components/SafeTradeNote";
 import TopBar from "../../components/TopBar";
+import UserAvatar from "../../components/UserAvatar";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { compressProfileImage, validateProfileImage } from "@/lib/profileImage";
 
 type UserPost = {
   id: string;
@@ -46,18 +52,34 @@ function formatPrice(value?: number | string) {
 export default function PerfilPage() {
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<UserPost[]>([]);
+  const [favoritesCount, setFavoritesCount] = useState(0);
+  const [chatsCount, setChatsCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [displayName, setDisplayName] = useState("");
+  const [photoPreview, setPhotoPreview] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
 
   async function loadPosts(userId: string) {
     try {
-      const q = query(collection(db, "posts"), where("userId", "==", userId));
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map((document) => ({
+      const postsQuery = query(collection(db, "posts"), where("userId", "==", userId));
+      const favoritesQuery = query(collection(db, "favorites"), where("userId", "==", userId));
+      const chatsQuery = query(collection(db, "conversations"), where("participants", "array-contains", userId));
+
+      const [postsSnapshot, favoritesSnapshot, chatsSnapshot] = await Promise.all([
+        getDocs(postsQuery),
+        getDocs(favoritesQuery),
+        getDocs(chatsQuery),
+      ]);
+
+      const data = postsSnapshot.docs.map((document) => ({
         id: document.id,
         ...document.data(),
       })) as UserPost[];
 
       setPosts(data);
+      setFavoritesCount(favoritesSnapshot.size);
+      setChatsCount(chatsSnapshot.size);
     } catch (error) {
       console.error("Error cargando perfil:", error);
       toast.error("Error cargando perfil");
@@ -69,6 +91,8 @@ export default function PerfilPage() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      setDisplayName(currentUser?.displayName || "");
+      setPhotoPreview(currentUser?.photoURL || "");
 
       if (!currentUser) {
         setPosts([]);
@@ -104,6 +128,11 @@ export default function PerfilPage() {
 
         localStorage.removeItem("pendingBoostPostId");
         localStorage.removeItem("pendingBoostPlan");
+        trackEvent(analyticsEvents.boostSuccess, {
+          product_id: postId,
+          plan,
+          days,
+        });
         toast.success(`Boost activado por ${days} días`);
         await loadPosts(auth.currentUser.uid);
         window.history.replaceState({}, "", "/perfil");
@@ -124,6 +153,82 @@ export default function PerfilPage() {
     } catch (error) {
       console.error("Error cerrando sesión:", error);
       toast.error("No se pudo cerrar sesión");
+    }
+  }
+
+  function selectProfilePhoto(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const error = validateProfileImage(file);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+
+    if (photoPreview && photoPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(photoPreview);
+    }
+
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  }
+
+  async function saveProfile() {
+    if (!user) return;
+
+    const cleanName = displayName.trim();
+    if (!cleanName) {
+      toast.error("Agrega un nombre para tu perfil");
+      return;
+    }
+
+    try {
+      setSavingProfile(true);
+      let nextPhotoURL = user.photoURL || "";
+
+      if (photoFile) {
+        const compressedFile = await compressProfileImage(photoFile);
+        const compressedError = validateProfileImage(compressedFile);
+        if (compressedError) {
+          toast.error(compressedError);
+          return;
+        }
+        const safeName = compressedFile.name.replace(/[^\w.-]/g, "-");
+        const imageRef = ref(storage, `users/${user.uid}/profile-${Date.now()}-${safeName}`);
+
+        await uploadBytes(imageRef, compressedFile, {
+          contentType: compressedFile.type,
+        });
+        nextPhotoURL = await getDownloadURL(imageRef);
+      }
+
+      await updateProfile(user, {
+        displayName: cleanName,
+        photoURL: nextPhotoURL || null,
+      });
+
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          uid: user.uid,
+          name: cleanName,
+          email: user.email || "",
+          photoURL: nextPhotoURL,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      setUser(auth.currentUser);
+      setPhotoFile(null);
+      setPhotoPreview(nextPhotoURL);
+      toast.success("Perfil actualizado");
+    } catch (error) {
+      console.error("Error guardando perfil:", error);
+      toast.error("No se pudo actualizar tu perfil");
+    } finally {
+      setSavingProfile(false);
     }
   }
 
@@ -154,7 +259,7 @@ export default function PerfilPage() {
     }
   }
 
-  if (loading) return <main style={centerPage}>Cargando perfil...</main>;
+  if (loading) return <PremiumLoading label="Cargando perfil..." />;
 
   if (!user) {
     return (
@@ -180,6 +285,9 @@ export default function PerfilPage() {
   const premiumPosts = posts.filter((post) => isPremiumActive(post)).length;
   const activePosts = posts.filter((post) => (post.status || "active") === "active").length;
   const soldPosts = posts.filter((post) => post.status === "sold").length;
+  const accountCreatedAt = user.metadata.creationTime
+    ? new Intl.DateTimeFormat("es-MX", { month: "short", year: "numeric" }).format(new Date(user.metadata.creationTime))
+    : "Cuenta activa";
 
   return (
     <>
@@ -188,11 +296,50 @@ export default function PerfilPage() {
       <main className="fade-in" style={pageStyle}>
         <section style={containerStyle}>
           <div style={profileCard}>
-            <div style={avatar}>{user.email?.charAt(0).toUpperCase() || "U"}</div>
+            <div style={profilePhotoWrap}>
+              <UserAvatar
+                name={displayName || user.displayName}
+                email={user.email}
+                photoURL={photoPreview || user.photoURL}
+                size={104}
+                label="Foto de perfil"
+              />
+              <label style={photoButton}>
+                Cambiar foto
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={selectProfilePhoto}
+                  style={{ display: "none" }}
+                  aria-label="Subir foto de perfil"
+                />
+              </label>
+            </div>
             <div style={{ flex: 1 }}>
               <span style={eyebrow}>Panel de vendedor</span>
               <h1 style={titleStyle}>{user.displayName || "Usuario"}</h1>
               <p style={subtitleStyle}>{user.email}</p>
+              <p style={accountMeta}>Miembro desde {accountCreatedAt}</p>
+              <div className="profile-edit-grid" style={editProfileGrid}>
+                <label style={editField}>
+                  <span>Nombre visible</span>
+                  <input
+                    value={displayName}
+                    onChange={(event) => setDisplayName(event.target.value)}
+                    placeholder="Tu nombre o tienda"
+                    style={editInput}
+                    aria-label="Nombre visible"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={saveProfile}
+                  disabled={savingProfile}
+                  style={{ ...primaryButton, opacity: savingProfile ? 0.7 : 1 }}
+                >
+                  {savingProfile ? "Guardando..." : "Guardar perfil"}
+                </button>
+              </div>
               <div style={actionsRow}>
                 <Link href="/publicar" style={{ textDecoration: "none" }}>
                   <button type="button" style={primaryButton}>Publicar producto</button>
@@ -208,11 +355,15 @@ export default function PerfilPage() {
             </div>
           </div>
 
+          <SafeTradeNote title="Consejo para vendedores" />
+
           <div style={statsGrid}>
             <Stat label="Publicaciones" value={posts.length} />
             <Stat label="Activas" value={activePosts} />
             <Stat label="Vendidas" value={soldPosts} />
             <Stat label="Premium activos" value={premiumPosts} />
+            <Stat label="Favoritos" value={favoritesCount} />
+            <Stat label="Chats" value={chatsCount} />
           </div>
 
           <div style={sectionHeader}>
@@ -227,7 +378,7 @@ export default function PerfilPage() {
             <div style={emptyCard}>
               <span style={eyebrow}>Sin publicaciones</span>
               <h2 style={emptyTitle}>Publica tu primer producto.</h2>
-              <p style={emptyText}>Agrega fotos reales, precio y una descripción clara para empezar a vender.</p>
+              <p style={emptyText}>Agrega fotos reales, precio y una descripcion clara para empezar a recibir mensajes.</p>
               <Link href="/publicar" style={{ textDecoration: "none" }}>
                 <button type="button" style={primaryButton}>Publicar ahora</button>
               </Link>
@@ -246,7 +397,7 @@ export default function PerfilPage() {
                       <div style={mediaWrap}>
                         {premiumActive && <span style={premiumBadge}>Premium · {daysLeft} días</span>}
                         {isSold && <span style={soldBadge}>Vendido</span>}
-                        <img src={image} alt={post.titulo || "Producto"} style={productImage} />
+                        <img src={image} alt={post.titulo || "Producto"} style={productImage} loading="lazy" decoding="async" />
                       </div>
                       <div style={cardBody}>
                         <span style={categoryBadge}>{post.categoria || "Producto"}</span>
@@ -293,6 +444,13 @@ export default function PerfilPage() {
         </section>
 
         <BottomNav />
+        <style jsx>{`
+          @media (max-width: 760px) {
+            .profile-edit-grid {
+              grid-template-columns: 1fr !important;
+            }
+          }
+        `}</style>
       </main>
     </>
   );
@@ -314,14 +472,6 @@ const pageStyle: React.CSSProperties = {
   padding: "42px 24px 140px",
 };
 
-const centerPage: React.CSSProperties = {
-  ...pageStyle,
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  fontWeight: "900",
-};
-
 const containerStyle: React.CSSProperties = {
   maxWidth: "1240px",
   margin: "0 auto",
@@ -334,22 +484,26 @@ const profileCard: React.CSSProperties = {
   flexWrap: "wrap",
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   padding: "28px",
   marginBottom: "20px",
 };
 
-const avatar: React.CSSProperties = {
-  width: "96px",
-  height: "96px",
+const profilePhotoWrap: React.CSSProperties = {
+  display: "grid",
+  justifyItems: "center",
+  gap: "10px",
+};
+
+const photoButton: React.CSSProperties = {
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(255,255,255,0.06)",
+  color: "white",
   borderRadius: "8px",
-  background: "#ff7b00",
-  color: "#101010",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "42px",
+  padding: "10px 12px",
+  fontSize: "13px",
   fontWeight: "900",
+  cursor: "pointer",
 };
 
 const eyebrow: React.CSSProperties = {
@@ -376,6 +530,13 @@ const subtitleStyle: React.CSSProperties = {
   overflowWrap: "anywhere",
 };
 
+const accountMeta: React.CSSProperties = {
+  margin: "6px 0 0",
+  color: "#ffb067",
+  fontSize: "13px",
+  fontWeight: "900",
+};
+
 const actionsRow: React.CSSProperties = {
   display: "flex",
   gap: "10px",
@@ -383,9 +544,35 @@ const actionsRow: React.CSSProperties = {
   marginTop: "18px",
 };
 
+const editProfileGrid: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(220px, 1fr) auto",
+  gap: "10px",
+  alignItems: "end",
+  marginTop: "16px",
+};
+
+const editField: React.CSSProperties = {
+  display: "grid",
+  gap: "8px",
+  color: "#cfcfcf",
+  fontSize: "13px",
+  fontWeight: "900",
+};
+
+const editInput: React.CSSProperties = {
+  minHeight: "46px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(16,16,16,0.92)",
+  color: "white",
+  borderRadius: "8px",
+  padding: "0 13px",
+  outline: "none",
+};
+
 const primaryButton: React.CSSProperties = {
   border: "none",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   padding: "14px 16px",
   borderRadius: "8px",
@@ -410,13 +597,14 @@ const statsGrid: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
   gap: "14px",
+  marginTop: "18px",
   marginBottom: "30px",
 };
 
 const statCard: React.CSSProperties = {
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.035))",
   padding: "20px",
 };
 
@@ -440,7 +628,7 @@ const productCard: React.CSSProperties = {
   overflow: "hidden",
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.035))",
 };
 
 const mediaWrap: React.CSSProperties = {
@@ -461,7 +649,7 @@ const premiumBadge: React.CSSProperties = {
   top: "12px",
   right: "12px",
   borderRadius: "8px",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   padding: "8px 10px",
   fontSize: "12px",
@@ -548,7 +736,7 @@ const emptyCard: React.CSSProperties = {
   margin: "0 auto",
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   padding: "46px 24px",
   textAlign: "center",
 };

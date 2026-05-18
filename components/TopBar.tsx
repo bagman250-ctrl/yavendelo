@@ -48,8 +48,11 @@ export default function TopBar() {
     <header style={headerStyle}>
       <div style={containerStyle}>
         <div style={leftStyle}>
-          <Link href="/" style={{ textDecoration: "none", color: "white" }}>
-            <div style={logoStyle}>YaVendelo</div>
+          <Link href="/" style={{ textDecoration: "none", color: "white" }} aria-label="Ir al inicio">
+            <div style={logoStyle}>
+              <span style={logoMark}>YV</span>
+              <span>YaVendelo</span>
+            </div>
           </Link>
 
           <nav style={navStyle}>
@@ -62,11 +65,12 @@ export default function TopBar() {
 
         <div style={rightStyle}>
           <Link href="/#productos" className="top-search-box" style={searchBox}>
+            <span style={searchIcon} aria-hidden="true">⌕</span>
             Buscar productos
           </Link>
 
           <Link href="/notificaciones" style={notificationButton} aria-label="Notificaciones">
-            <span aria-hidden="true">🔔</span>
+            <span aria-hidden="true" style={notificationIcon}>!</span>
             {unreadCount > 0 && (
               <span style={badgeStyle}>
                 {unreadCount > 9 ? "9+" : unreadCount}
@@ -106,7 +110,7 @@ const headerStyle: React.CSSProperties = {
   top: 0,
   zIndex: 999,
   backdropFilter: "blur(16px)",
-  background: "rgba(5,5,5,0.82)",
+  background: "rgba(5,5,5,0.86)",
   borderBottom: "1px solid rgba(255,255,255,0.08)",
 };
 
@@ -127,10 +131,26 @@ const leftStyle: React.CSSProperties = {
 };
 
 const logoStyle: React.CSSProperties = {
-  fontSize: "24px",
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  fontSize: "23px",
   fontWeight: "900",
   letterSpacing: "0",
   whiteSpace: "nowrap",
+};
+
+const logoMark: React.CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "8px",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
+  color: "#101010",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "12px",
+  boxShadow: "0 12px 26px rgba(255,123,0,0.24)",
 };
 
 const navStyle: React.CSSProperties = {
@@ -144,6 +164,7 @@ const navLink: React.CSSProperties = {
   color: "#c7c7c7",
   fontWeight: "800",
   fontSize: "14px",
+  transition: "color 0.2s ease",
 };
 
 const rightStyle: React.CSSProperties = {
@@ -165,6 +186,20 @@ const notificationButton: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   flexShrink: 0,
+  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+};
+
+const notificationIcon: React.CSSProperties = {
+  width: "18px",
+  height: "18px",
+  borderRadius: "999px",
+  border: "2px solid #ffb067",
+  color: "#ffb067",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "12px",
+  fontWeight: "900",
 };
 
 const badgeStyle: React.CSSProperties = {
@@ -197,4 +232,12 @@ const searchBox: React.CSSProperties = {
   textDecoration: "none",
   fontSize: "14px",
   fontWeight: "800",
+  gap: "8px",
+  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+};
+
+const searchIcon: React.CSSProperties = {
+  color: "#ffb067",
+  fontSize: "18px",
+  lineHeight: 1,
 };

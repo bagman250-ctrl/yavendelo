@@ -8,23 +8,10 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { auth, db, storage } from "../firebase/config";
 import BottomNav from "../../components/BottomNav";
 import ImagePreviewCarousel from "../../components/ImagePreviewCarousel";
+import SafeTradeNote from "../../components/SafeTradeNote";
 import TopBar from "../../components/TopBar";
-
-const categories = [
-  "Tecnología",
-  "Celulares",
-  "Computadoras",
-  "Gaming",
-  "Autos",
-  "Motos",
-  "Moda",
-  "Hogar",
-  "Deportes",
-  "Música",
-  "Mascotas",
-  "Servicios",
-  "Otros",
-];
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { marketplaceCategories } from "@/lib/categories";
 
 const cities = [
   "Ciudad de México",
@@ -44,7 +31,7 @@ export default function Publicar() {
   const [precio, setPrecio] = useState("");
   const [ciudad, setCiudad] = useState("");
   const [descripcion, setDescripcion] = useState("");
-  const [categoria, setCategoria] = useState(categories[0]);
+  const [categoria, setCategoria] = useState(marketplaceCategories[0].label);
   const [imagenes, setImagenes] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,7 +44,7 @@ export default function Publicar() {
 
   function generateDescription() {
     if (!titulo.trim()) {
-      toast.error("Escribe un título primero");
+      toast.error("Agrega un titulo para sugerir una descripcion");
       return;
     }
 
@@ -124,12 +111,12 @@ Recomendación: agrega medidas, accesorios incluidos, detalles de uso y cualquie
     }
 
     if (!titulo.trim() || !precio.trim() || !ciudad.trim() || !descripcion.trim() || imagenes.length === 0) {
-      toast.error("Completa título, precio, ciudad, descripción e imágenes");
+      toast.error("Completa titulo, precio, ciudad, descripcion e imagenes reales");
       return;
     }
 
     if (Number(precio) <= 0) {
-      toast.error("Ingresa un precio válido");
+      toast.error("Ingresa un precio valido mayor a cero");
       return;
     }
 
@@ -137,7 +124,7 @@ Recomendación: agrega medidas, accesorios incluidos, detalles de uso y cualquie
       setLoading(true);
       const imageUrls = await uploadImages();
 
-      await addDoc(collection(db, "posts"), {
+      const postRef = await addDoc(collection(db, "posts"), {
         titulo: titulo.trim(),
         precio: precio.trim(),
         ciudad: ciudad.trim(),
@@ -148,6 +135,7 @@ Recomendación: agrega medidas, accesorios incluidos, detalles de uso y cualquie
         userId: auth.currentUser.uid,
         userEmail: auth.currentUser.email,
         userName: auth.currentUser.displayName || "Usuario",
+        userPhotoURL: auth.currentUser.photoURL || "",
         createdAt: serverTimestamp(),
         views: 0,
         likes: 0,
@@ -156,7 +144,12 @@ Recomendación: agrega medidas, accesorios incluidos, detalles de uso y cualquie
         status: "active",
       });
 
-      toast.success("Producto publicado");
+      trackEvent(analyticsEvents.publishProduct, {
+        product_id: postRef.id,
+        category: categoria,
+        city: ciudad.trim(),
+      });
+      toast.success("Producto publicado y listo para recibir mensajes");
       window.location.href = "/";
     } catch (error) {
       console.error("Error al publicar:", error);
@@ -174,7 +167,7 @@ Recomendación: agrega medidas, accesorios incluidos, detalles de uso y cualquie
         <div style={containerStyle}>
           <section style={heroSection}>
             <div>
-              <div style={heroBadge}>Publicación guiada</div>
+              <div style={heroBadge}>Beta · Publicacion guiada</div>
               <h1 style={heroTitle}>Vende con una publicación clara y confiable.</h1>
               <p style={heroText}>
                 Sube buenas fotos, define precio y describe el producto con detalle. Una publicación completa
@@ -193,6 +186,8 @@ Recomendación: agrega medidas, accesorios incluidos, detalles de uso y cualquie
           </section>
 
           <section style={formCard}>
+            <SafeTradeNote title="Publica con confianza" />
+
             <label style={uploadLabel}>
               <div style={uploadBox}>
                 <strong style={uploadTitle}>
@@ -204,7 +199,14 @@ Recomendación: agrega medidas, accesorios incluidos, detalles de uso y cualquie
                     : `${previews.length}/8 imágenes seleccionadas.`}
                 </span>
               </div>
-              <input type="file" accept="image/*" multiple onChange={handleImages} style={{ display: "none" }} />
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImages}
+                style={{ display: "none" }}
+                aria-label="Subir imagenes del producto"
+              />
             </label>
 
             <ImagePreviewCarousel previews={previews} onRemove={removeImage} />
@@ -217,6 +219,7 @@ Recomendación: agrega medidas, accesorios incluidos, detalles de uso y cualquie
                   value={titulo}
                   onChange={(event) => setTitulo(event.target.value)}
                   style={inputStyle}
+                  aria-label="Titulo del producto"
                 />
               </Field>
 
@@ -228,11 +231,12 @@ Recomendación: agrega medidas, accesorios incluidos, detalles de uso y cualquie
                   value={precio}
                   onChange={(event) => setPrecio(event.target.value)}
                   style={inputStyle}
+                  aria-label="Precio del producto"
                 />
               </Field>
 
               <Field label="Ciudad">
-                <select value={ciudad} onChange={(event) => setCiudad(event.target.value)} style={selectStyle}>
+                <select value={ciudad} onChange={(event) => setCiudad(event.target.value)} style={selectStyle} aria-label="Ciudad">
                   <option value="">Selecciona ciudad</option>
                   {cities.map((city) => (
                     <option key={city}>{city}</option>
@@ -241,9 +245,11 @@ Recomendación: agrega medidas, accesorios incluidos, detalles de uso y cualquie
               </Field>
 
               <Field label="Categoría">
-                <select value={categoria} onChange={(event) => setCategoria(event.target.value)} style={selectStyle}>
-                  {categories.map((item) => (
-                    <option key={item}>{item}</option>
+                <select value={categoria} onChange={(event) => setCategoria(event.target.value)} style={selectStyle} aria-label="Categoria">
+                  {marketplaceCategories.map((item) => (
+                    <option key={item.slug} value={item.label}>
+                      {item.icon} {item.label}
+                    </option>
                   ))}
                 </select>
               </Field>
@@ -259,6 +265,7 @@ Recomendación: agrega medidas, accesorios incluidos, detalles de uso y cualquie
                 value={descripcion}
                 onChange={(event) => setDescripcion(event.target.value)}
                 style={{ ...inputStyle, minHeight: "220px", resize: "vertical" }}
+                aria-label="Descripcion del producto"
               />
             </Field>
 
@@ -337,7 +344,7 @@ const heroText: React.CSSProperties = {
 const progressCard: React.CSSProperties = {
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   padding: "20px",
 };
 
@@ -363,7 +370,7 @@ const progressTrack: React.CSSProperties = {
 const progressFill: React.CSSProperties = {
   height: "100%",
   borderRadius: "999px",
-  background: "#ff7b00",
+  background: "linear-gradient(90deg, #ffb067, #ff7b00)",
 };
 
 const progressText: React.CSSProperties = {
@@ -373,7 +380,9 @@ const progressText: React.CSSProperties = {
 };
 
 const formCard: React.CSSProperties = {
-  background: "rgba(255,255,255,0.05)",
+  display: "grid",
+  gap: "22px",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   border: "1px solid rgba(255,255,255,0.1)",
   borderRadius: "8px",
   padding: "28px",
@@ -382,7 +391,7 @@ const formCard: React.CSSProperties = {
 
 const uploadLabel: React.CSSProperties = {
   display: "block",
-  marginBottom: "22px",
+  marginBottom: 0,
   cursor: "pointer",
 };
 
@@ -424,7 +433,7 @@ const labelStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
-  background: "#101010",
+  background: "rgba(16,16,16,0.92)",
   border: "1px solid rgba(255,255,255,0.12)",
   borderRadius: "8px",
   padding: "16px",
@@ -453,7 +462,7 @@ const helperButton: React.CSSProperties = {
 const publishButton: React.CSSProperties = {
   width: "100%",
   border: "none",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   padding: "18px",
   borderRadius: "8px",

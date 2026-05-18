@@ -26,7 +26,7 @@ export default function ErrorPage({
           <span style={eyebrow}>Error</span>
           <h1 style={titleStyle}>Algo no cargo correctamente</h1>
           <p style={textStyle}>
-            Puedes reintentar la carga o volver al catalogo principal.
+            Estás usando una versión beta. Puedes reintentar, volver al catálogo o reportar el problema para revisarlo.
           </p>
 
           <div style={actionsStyle}>
@@ -36,6 +36,11 @@ export default function ErrorPage({
             <Link href="/" style={{ textDecoration: "none" }}>
               <button type="button" style={secondaryButton}>
                 Ir al inicio
+              </button>
+            </Link>
+            <Link href="/beta#feedback" style={{ textDecoration: "none" }}>
+              <button type="button" style={secondaryButton}>
+                Reportar problema
               </button>
             </Link>
           </div>
@@ -62,7 +67,7 @@ const cardStyle: React.CSSProperties = {
   width: "100%",
   maxWidth: "560px",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   borderRadius: "8px",
   padding: "32px",
   textAlign: "center",
@@ -101,7 +106,7 @@ const actionsStyle: React.CSSProperties = {
 
 const buttonStyle: React.CSSProperties = {
   border: "none",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   padding: "14px 18px",
   borderRadius: "8px",

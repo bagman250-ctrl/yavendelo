@@ -15,8 +15,12 @@ import {
 
 import { auth, db } from "@/app/firebase/config";
 import BottomNav from "@/components/BottomNav";
+import PremiumLoading from "@/components/PremiumLoading";
 import ProductCard from "@/components/ProductCard";
+import SafeTradeNote from "@/components/SafeTradeNote";
+import StartChatButton from "@/components/StartChatButton";
 import TopBar from "@/components/TopBar";
+import UserAvatar from "@/components/UserAvatar";
 
 type TimeLike =
   | number
@@ -39,6 +43,11 @@ type SellerPost = {
   featured?: boolean;
   featuredUntil?: TimeLike;
   likes?: number;
+  status?: string;
+  userId?: string;
+  userName?: string;
+  userPhotoURL?: string;
+  createdAt?: TimeLike;
 };
 
 type Review = {
@@ -49,6 +58,12 @@ type Review = {
   rating?: number;
   sellerEmail?: string;
   createdAt?: TimeLike;
+};
+
+type SellerProfile = {
+  name?: string;
+  photoURL?: string;
+  createdAt?: number | null;
 };
 
 function getMillis(value: TimeLike) {
@@ -71,6 +86,7 @@ export default function VendedorPage() {
   const [rating, setRating] = useState(5);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [sellerProfile, setSellerProfile] = useState<SellerProfile | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -90,6 +106,13 @@ export default function VendedorPage() {
           getDocs(postsQuery),
           getDocs(reviewsQuery),
         ]);
+
+        fetch(`/api/seller-profile?email=${encodeURIComponent(email)}`)
+          .then((response) => response.json())
+          .then((data: { profile?: SellerProfile | null }) => setSellerProfile(data.profile || null))
+          .catch((error) => {
+            console.warn("No se pudo cargar foto publica del vendedor:", error);
+          });
 
         const postsData = postsSnapshot.docs.map((document) => ({
           id: document.id,
@@ -128,7 +151,7 @@ export default function VendedorPage() {
     const cleanComment = comment.trim();
 
     if (!currentUser) {
-      toast.error("Debes iniciar sesion");
+      toast.error("Inicia sesion para publicar una reseña");
       return;
     }
 
@@ -185,6 +208,23 @@ export default function VendedorPage() {
   }, [reviews]);
 
   const featuredCount = posts.filter(isPremiumActive).length;
+  const activePosts = posts.filter((post) => (post.status || "active") === "active");
+  const sellerName = sellerProfile?.name || posts.find((post) => post.userName)?.userName || "Vendedor";
+  const sellerPhotoURL = sellerProfile?.photoURL || posts.find((post) => post.userPhotoURL)?.userPhotoURL || "";
+  const firstActivePost = activePosts.find((post) => post.userId);
+  const firstPostMillis = posts.reduce((min, post) => {
+    const created = getMillis(post.createdAt);
+    if (!created) return min;
+    return min === 0 ? created : Math.min(min, created);
+  }, 0);
+  const latestPostMillis = posts.reduce((max, post) => Math.max(max, getMillis(post.createdAt)), 0);
+  const memberSinceValue = sellerProfile?.createdAt || firstPostMillis;
+  const memberSince = memberSinceValue
+    ? new Intl.DateTimeFormat("es-MX", { month: "short", year: "numeric" }).format(new Date(memberSinceValue))
+    : "Nuevo vendedor";
+  const latestPost = latestPostMillis
+    ? new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short" }).format(new Date(latestPostMillis))
+    : "Sin publicaciones";
   const reputation =
     Number(averageRating) >= 4.8
       ? "Excelente"
@@ -195,7 +235,7 @@ export default function VendedorPage() {
           : "Nuevo vendedor";
 
   if (loading) {
-    return <main style={centerPage}>Cargando vendedor...</main>;
+    return <PremiumLoading label="Cargando vendedor..." />;
   }
 
   return (
@@ -205,12 +245,17 @@ export default function VendedorPage() {
       <main className="fade-in" style={pageStyle}>
         <section style={containerStyle}>
           <section style={profileCard}>
-            <div style={avatar}>{email.charAt(0).toUpperCase()}</div>
+            <UserAvatar name={sellerName} email={email} photoURL={sellerPhotoURL} size={112} label="Avatar del vendedor" />
 
             <div style={{ flex: 1 }}>
               <span style={eyebrow}>Perfil vendedor</span>
-              <h1 style={titleStyle}>Vendedor</h1>
+              <h1 style={titleStyle}>{sellerName}</h1>
               <p style={emailStyle}>{email}</p>
+              <div style={sellerBadges}>
+                <span>Miembro desde {memberSince}</span>
+                <span>Ultima publicacion {latestPost}</span>
+                <span>{activePosts.length} activos</span>
+              </div>
 
               <div style={statsGrid}>
                 <Stat label="Productos" value={posts.length} />
@@ -226,8 +271,19 @@ export default function VendedorPage() {
               <p style={mutedText}>
                 Revisa publicaciones y reseñas antes de cerrar una compra.
               </p>
+              {firstActivePost && (
+                <StartChatButton
+                  productId={firstActivePost.id}
+                  productTitle={firstActivePost.titulo}
+                  sellerId={firstActivePost.userId}
+                  sellerName={sellerName}
+                  sellerPhotoURL={sellerPhotoURL}
+                />
+              )}
             </div>
           </section>
+
+          <SafeTradeNote title="Antes de comprar" />
 
           <section style={columnsGrid}>
             <section style={panelStyle}>
@@ -339,14 +395,6 @@ const pageStyle: React.CSSProperties = {
   padding: "42px 24px 140px",
 };
 
-const centerPage: React.CSSProperties = {
-  ...pageStyle,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontWeight: "900",
-};
-
 const containerStyle: React.CSSProperties = {
   maxWidth: "1180px",
   margin: "0 auto",
@@ -358,23 +406,10 @@ const profileCard: React.CSSProperties = {
   gap: "20px",
   flexWrap: "wrap",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   borderRadius: "8px",
   padding: "24px",
   marginBottom: "18px",
-};
-
-const avatar: React.CSSProperties = {
-  width: "96px",
-  height: "96px",
-  borderRadius: "8px",
-  background: "#ff7b00",
-  color: "#101010",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "42px",
-  fontWeight: "900",
 };
 
 const eyebrow: React.CSSProperties = {
@@ -401,6 +436,16 @@ const emailStyle: React.CSSProperties = {
   margin: "0 0 16px",
 };
 
+const sellerBadges: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "8px",
+  marginBottom: "16px",
+  color: "#d8d8d8",
+  fontSize: "12px",
+  fontWeight: "900",
+};
+
 const statsGrid: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))",
@@ -409,7 +454,7 @@ const statsGrid: React.CSSProperties = {
 
 const statCard: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.035))",
   borderRadius: "8px",
   padding: "12px",
   display: "flex",
@@ -444,12 +489,13 @@ const columnsGrid: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit,minmax(min(360px,100%),1fr))",
   gap: "18px",
+  marginTop: "18px",
   marginBottom: "18px",
 };
 
 const panelStyle: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.04)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.028))",
   borderRadius: "8px",
   padding: "22px",
 };
@@ -499,7 +545,7 @@ const textareaStyle: React.CSSProperties = {
 const primaryButton: React.CSSProperties = {
   border: "none",
   cursor: "pointer",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   padding: "13px 16px",
   borderRadius: "8px",
@@ -524,7 +570,7 @@ const listStyle: React.CSSProperties = {
 
 const reviewCard: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.035))",
   borderRadius: "8px",
   padding: "14px",
 };

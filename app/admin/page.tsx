@@ -72,7 +72,23 @@ type SupportMessage = {
   email?: string;
   reason?: string;
   message?: string;
+  page?: string;
+  priority?: string;
   status?: string;
+  createdAt?: TimeLike;
+};
+
+type BetaFeedback = {
+  id: string;
+  name?: string;
+  email?: string;
+  description?: string;
+  message?: string;
+  page?: string;
+  priority?: string;
+  status?: "pending" | "reviewed" | "resolved" | "closed" | string;
+  source?: string;
+  userId?: string | null;
   createdAt?: TimeLike;
 };
 
@@ -102,6 +118,31 @@ function formatPrice(value?: number | string) {
   return currency.format(Number(value || 0));
 }
 
+function formatAdminDate(value?: TimeLike) {
+  const millis = getMillis(value);
+  if (!millis) return "Sin fecha";
+
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(millis));
+}
+
+function getFeedbackStatusLabel(status?: string) {
+  if (status === "reviewed") return "Revisado";
+  if (status === "resolved" || status === "closed") return "Resuelto";
+  return "Pendiente";
+}
+
+function getFeedbackStatusStyle(status?: string) {
+  if (status === "resolved" || status === "closed") return successBadge;
+  if (status === "reviewed") return reviewedBadge;
+  return warningBadge;
+}
+
 export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -110,6 +151,7 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AppUser[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
+  const [betaFeedback, setBetaFeedback] = useState<BetaFeedback[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -137,11 +179,12 @@ export default function AdminPage() {
         orderBy("createdAt", "desc")
       );
 
-      const [postsResult, usersResult, reportsResult, supportResult] = await Promise.allSettled([
+      const [postsResult, usersResult, reportsResult, supportResult, betaFeedbackResult] = await Promise.allSettled([
         getDocs(postsQuery),
         getDocs(collection(db, "users")),
         getDocs(collection(db, "reports")),
         getDocs(collection(db, "supportMessages")),
+        getDocs(collection(db, "betaFeedback")),
       ]);
 
       if (postsResult.status === "fulfilled") {
@@ -179,6 +222,15 @@ export default function AdminPage() {
             id: document.id,
             ...document.data(),
           })) as SupportMessage[]
+        );
+      }
+
+      if (betaFeedbackResult.status === "fulfilled") {
+        setBetaFeedback(
+          betaFeedbackResult.value.docs.map((document) => ({
+            id: document.id,
+            ...document.data(),
+          })) as BetaFeedback[]
         );
       }
     } catch (error) {
@@ -238,6 +290,31 @@ export default function AdminPage() {
     }
   }
 
+  async function setPostVisibility(postId: string, nextStatus: "active" | "hidden") {
+    try {
+      await updateDoc(doc(db, "posts", postId), {
+        status: nextStatus,
+        statusUpdatedAt: Date.now(),
+      });
+
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                status: nextStatus,
+              }
+            : post
+        )
+      );
+
+      toast.success(nextStatus === "hidden" ? "Producto ocultado" : "Producto reactivado");
+    } catch (error) {
+      console.error("Error actualizando visibilidad:", error);
+      toast.error("No se pudo actualizar la visibilidad");
+    }
+  }
+
   async function markReportResolved(reportId: string) {
     try {
       const resolvedAt = Date.now();
@@ -290,11 +367,40 @@ export default function AdminPage() {
     }
   }
 
+  async function updateBetaFeedbackStatus(feedbackId: string, status: "reviewed" | "resolved") {
+    try {
+      await updateDoc(doc(db, "betaFeedback", feedbackId), {
+        status,
+        updatedAt: Date.now(),
+        ...(status === "reviewed" ? { reviewedAt: Date.now() } : { resolvedAt: Date.now() }),
+      });
+
+      setBetaFeedback((prev) =>
+        prev.map((feedback) =>
+          feedback.id === feedbackId
+            ? {
+                ...feedback,
+                status,
+              }
+            : feedback
+        )
+      );
+
+      toast.success(status === "reviewed" ? "Feedback marcado como revisado" : "Feedback resuelto");
+    } catch (error) {
+      console.error("Error actualizando feedback beta:", error);
+      toast.error("No se pudo actualizar el feedback");
+    }
+  }
+
   const isAdmin = isAdminEmail(user?.email);
 
   const pendingReports = reports.filter((report) => report.status !== "resolved");
   const resolvedReports = reports.filter((report) => report.status === "resolved");
   const openSupport = supportMessages.filter((message) => message.status !== "closed");
+  const unresolvedBetaFeedback = betaFeedback.filter(
+    (feedback) => feedback.status !== "resolved" && feedback.status !== "closed"
+  );
   const premiumPosts = posts.filter(isPremiumActive);
   const totalViews = posts.reduce((sum, post) => sum + Number(post.views || 0), 0);
   const totalLikes = posts.reduce((sum, post) => sum + Number(post.likes || 0), 0);
@@ -386,6 +492,7 @@ export default function AdminPage() {
             <MetricCard label="Usuarios" value={users.length} detail="Registros cargados" />
             <MetricCard label="Reportes pendientes" value={pendingReports.length} detail={`${resolvedReports.length} resueltos`} />
             <MetricCard label="Soporte abierto" value={openSupport.length} detail={`${supportMessages.length} mensajes`} />
+            <MetricCard label="Feedback beta" value={unresolvedBetaFeedback.length} detail={`${betaFeedback.length} reportes`} />
             <MetricCard label="Vistas" value={totalViews} detail={`${totalLikes} guardados/likes`} />
           </section>
 
@@ -426,8 +533,68 @@ export default function AdminPage() {
                     key={post.id}
                     post={post}
                     onToggle={toggleFeatured}
+                    onVisibilityChange={setPostVisibility}
                     onDelete={deletePost}
                   />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section style={panelStyle}>
+            <div style={sectionHeader}>
+              <div>
+                <h2 style={sectionTitle}>Feedback beta</h2>
+                <p style={sectionSubtitle}>Reportes enviados por testers desde la beta cerrada.</p>
+              </div>
+              <span style={smallBadge}>{unresolvedBetaFeedback.length} pendientes</span>
+            </div>
+
+            {betaFeedback.length === 0 ? (
+              <EmptyState text="Aún no hay feedback beta." />
+            ) : (
+              <div style={listStack}>
+                {[...betaFeedback]
+                  .sort((a, b) => {
+                    const statusWeight = (status?: string) => (status === "resolved" || status === "closed" ? 1 : 0);
+                    return statusWeight(a.status) - statusWeight(b.status) || getMillis(b.createdAt) - getMillis(a.createdAt);
+                  })
+                  .map((feedback) => (
+                  <article key={feedback.id} style={betaFeedbackCard}>
+                    <div>
+                      <div style={feedbackTopLine}>
+                        <strong style={reportTitle}>{feedback.priority || "Media"}</strong>
+                        <span style={getFeedbackStatusStyle(feedback.status)}>{getFeedbackStatusLabel(feedback.status)}</span>
+                      </div>
+                      <p style={reportMeta}>{feedback.page || "Sin página"}</p>
+                      <p style={reportMeta}>
+                        {feedback.name || "Tester"} · {feedback.email || "Sin correo"}
+                      </p>
+                      <p style={reportText}>{feedback.description || feedback.message || "Sin descripción"}</p>
+                      <p style={dateText}>{formatAdminDate(feedback.createdAt)}</p>
+                    </div>
+
+                    {feedback.status !== "resolved" && feedback.status !== "closed" && (
+                      <div style={rowActions}>
+                        {feedback.status !== "reviewed" && (
+                          <button
+                            type="button"
+                            onClick={() => updateBetaFeedbackStatus(feedback.id, "reviewed")}
+                            style={secondaryButton}
+                          >
+                            Marcar revisado
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => updateBetaFeedbackStatus(feedback.id, "resolved")}
+                          style={resolveButton}
+                        >
+                          Resolver
+                        </button>
+                      </div>
+                    )}
+                  </article>
                 ))}
               </div>
             )}
@@ -593,14 +760,17 @@ function MetricCard({
 function AdminPostCard({
   post,
   onToggle,
+  onVisibilityChange,
   onDelete,
 }: {
   post: Post;
   onToggle: (postId: string, currentValue: boolean) => void;
+  onVisibilityChange: (postId: string, nextStatus: "active" | "hidden") => void;
   onDelete: (postId: string) => void;
 }) {
   const premiumActive = isPremiumActive(post);
   const image = post.imagen || post.imagenes?.[0] || "/placeholder.png";
+  const isHidden = post.status === "hidden";
 
   return (
     <article style={postCard}>
@@ -632,13 +802,26 @@ function AdminPostCard({
         <button type="button" onClick={() => onDelete(post.id)} style={dangerButton}>
           Eliminar
         </button>
+        <button
+          type="button"
+          onClick={() => onVisibilityChange(post.id, isHidden ? "active" : "hidden")}
+          style={isHidden ? activeButton : warningButton}
+        >
+          {isHidden ? "Reactivar" : "Ocultar"}
+        </button>
       </div>
     </article>
   );
 }
 
 function EmptyState({ text }: { text: string }) {
-  return <div style={emptyState}>{text}</div>;
+  return (
+    <div style={emptyState}>
+      <span style={emptyStateBadge}>Beta ops</span>
+      <strong style={emptyStateTitle}>{text}</strong>
+      <p style={emptyStateText}>Cuando haya actividad nueva, aparecerá aquí con acciones claras para revisarla.</p>
+    </div>
+  );
 }
 
 const pageStyle: CSSProperties = {
@@ -675,7 +858,7 @@ const heroSection: CSSProperties = {
   gap: "18px",
   flexWrap: "wrap",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   borderRadius: "8px",
   padding: "30px",
   marginBottom: "18px",
@@ -709,9 +892,10 @@ const statsGrid: CSSProperties = {
 
 const metricCard: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.035))",
   borderRadius: "8px",
   padding: "18px",
+  boxShadow: "0 18px 45px rgba(0,0,0,0.18)",
 };
 
 const metricLabel: CSSProperties = {
@@ -737,7 +921,7 @@ const metricDetail: CSSProperties = {
 
 const panelStyle: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.04)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.028))",
   borderRadius: "8px",
   padding: "22px",
   marginBottom: "18px",
@@ -794,8 +978,9 @@ const postsGrid: CSSProperties = {
 const postCard: CSSProperties = {
   overflow: "hidden",
   border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
+  background: "rgba(255,255,255,0.045)",
   borderRadius: "8px",
+  boxShadow: "0 18px 45px rgba(0,0,0,0.18)",
 };
 
 const imageWrap: CSSProperties = {
@@ -887,6 +1072,22 @@ const reportCard: CSSProperties = {
   padding: "16px",
 };
 
+const betaFeedbackCard: CSSProperties = {
+  ...reportCard,
+  display: "grid",
+  gap: "14px",
+  background:
+    "linear-gradient(135deg, rgba(255,123,0,0.08), transparent 42%), linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.035))",
+};
+
+const feedbackTopLine: CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: "12px",
+  flexWrap: "wrap",
+};
+
 const reportTitle: CSSProperties = {
   display: "block",
   fontSize: "17px",
@@ -905,6 +1106,13 @@ const reportText: CSSProperties = {
   lineHeight: 1.6,
   margin: "0 0 10px",
   overflowWrap: "anywhere",
+};
+
+const dateText: CSSProperties = {
+  margin: "0",
+  color: "#8d8d8d",
+  fontSize: "12px",
+  fontWeight: "800",
 };
 
 const smallBadge: CSSProperties = {
@@ -927,6 +1135,12 @@ const successBadge: CSSProperties = {
   ...smallBadge,
   background: "rgba(34,197,94,0.13)",
   color: "#86efac",
+};
+
+const reviewedBadge: CSSProperties = {
+  ...smallBadge,
+  background: "rgba(59,130,246,0.13)",
+  color: "#93c5fd",
 };
 
 const userRow: CSSProperties = {
@@ -955,7 +1169,7 @@ const avatar: CSSProperties = {
 const primaryButton: CSSProperties = {
   border: "none",
   cursor: "pointer",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   padding: "13px 16px",
   borderRadius: "8px",
@@ -989,6 +1203,16 @@ const dangerButton: CSSProperties = {
   fontWeight: "900",
 };
 
+const warningButton: CSSProperties = {
+  border: "none",
+  cursor: "pointer",
+  background: "rgba(255,184,0,0.16)",
+  color: "#ffd166",
+  padding: "13px 16px",
+  borderRadius: "8px",
+  fontWeight: "900",
+};
+
 const resolveButton: CSSProperties = {
   ...primaryButton,
   background: "rgba(34,197,94,0.18)",
@@ -996,12 +1220,36 @@ const resolveButton: CSSProperties = {
 };
 
 const emptyState: CSSProperties = {
-  border: "1px dashed rgba(255,255,255,0.16)",
+  border: "1px dashed rgba(255,123,0,0.24)",
   borderRadius: "8px",
   padding: "26px",
-  color: "#a7a7a7",
   textAlign: "center",
+  background: "rgba(255,123,0,0.06)",
+};
+
+const emptyStateBadge: CSSProperties = {
+  display: "inline-flex",
+  borderRadius: "8px",
+  background: "rgba(255,123,0,0.12)",
+  border: "1px solid rgba(255,123,0,0.22)",
+  color: "#ffb067",
+  padding: "7px 9px",
+  fontSize: "12px",
+  fontWeight: "900",
+  marginBottom: "12px",
+};
+
+const emptyStateTitle: CSSProperties = {
+  display: "block",
+  color: "white",
   fontWeight: "800",
+};
+
+const emptyStateText: CSSProperties = {
+  maxWidth: "460px",
+  margin: "10px auto 0",
+  color: "#a7a7a7",
+  lineHeight: 1.6,
 };
 
 const blockedPage: CSSProperties = {

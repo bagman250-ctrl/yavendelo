@@ -1,13 +1,29 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { collection, getDocs } from "firebase/firestore";
+import toast from "react-hot-toast";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  increment,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 
-import { db } from "./firebase/config";
+import { auth, db } from "./firebase/config";
 import BottomNav from "../components/BottomNav";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import TopBar from "../components/TopBar";
+import UserAvatar from "@/components/UserAvatar";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { marketplaceCategories, quickMarketplaceCategories } from "@/lib/categories";
 import styles from "./page.module.css";
 
 type ProductPost = {
@@ -22,24 +38,12 @@ type ProductPost = {
   featured?: boolean;
   featuredUntil?: number | string;
   status?: string;
+  likes?: number;
   createdAt?: { seconds?: number } | number | string;
+  userName?: string;
+  userEmail?: string;
+  userPhotoURL?: string;
 };
-
-const categories = [
-  "Tecnología",
-  "Celulares",
-  "Computadoras",
-  "Gaming",
-  "Autos",
-  "Motos",
-  "Moda",
-  "Hogar",
-  "Deportes",
-  "Música",
-  "Mascotas",
-  "Servicios",
-  "Otros",
-];
 
 const cities = [
   "Ciudad de México",
@@ -53,8 +57,6 @@ const cities = [
   "Cancún",
   "Toluca",
 ];
-
-const quickCategories = ["Tecnología", "Gaming", "Autos", "Moda", "Hogar", "Servicios"];
 
 function isPremiumActive(post: ProductPost) {
   return post.featured === true && Number(post.featuredUntil || 0) > Date.now();
@@ -80,6 +82,14 @@ function getProductImage(post: ProductPost) {
   return post.imagen || post.imagenes?.[0] || "/og-image.png";
 }
 
+function isNewPost(post: ProductPost) {
+  const created = getCreatedValue(post);
+  if (!created) return false;
+
+  const createdMillis = created < 10000000000 ? created * 1000 : created;
+  return Date.now() - createdMillis < 7 * 86400000;
+}
+
 export default function Home() {
   const [posts, setPosts] = useState<ProductPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,10 +97,16 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
   const [sortBy, setSortBy] = useState("recent");
+  const [statusFilter, setStatusFilter] = useState("active");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [favoriteIds, setFavoriteIds] = useState<Record<string, string>>({});
+  const [favoritesCount, setFavoritesCount] = useState<Record<string, number>>({});
+  const [favoriteLoading, setFavoriteLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
+    trackEvent(analyticsEvents.viewHome, { page: "/" });
+
     async function getPosts() {
       try {
         const querySnapshot = await getDocs(collection(db, "posts"));
@@ -100,6 +116,24 @@ export default function Home() {
         })) as ProductPost[];
 
         setPosts(data);
+        setFavoritesCount(
+          data.reduce<Record<string, number>>((acc, post) => {
+            acc[post.id] = Number(post.likes || 0);
+            return acc;
+          }, {})
+        );
+
+        if (auth.currentUser) {
+          const favoritesQuery = query(collection(db, "favorites"), where("userId", "==", auth.currentUser.uid));
+          const favoritesSnapshot = await getDocs(favoritesQuery);
+          const nextFavoriteIds = favoritesSnapshot.docs.reduce<Record<string, string>>((acc, favoriteDoc) => {
+            const favorite = favoriteDoc.data() as { productId?: string };
+            if (favorite.productId) acc[favorite.productId] = favoriteDoc.id;
+            return acc;
+          }, {});
+
+          setFavoriteIds(nextFavoriteIds);
+        }
       } catch (error) {
         console.error("Error cargando productos:", error);
       } finally {
@@ -112,7 +146,6 @@ export default function Home() {
 
   const filteredPosts = useMemo(() => {
     return posts
-      .filter((post) => (post.status || "active") === "active")
       .filter((post) => {
         const searchText = search.toLowerCase().trim();
         const title = post.titulo?.toLowerCase() || "";
@@ -132,6 +165,9 @@ export default function Home() {
           matchesSearch &&
           (selectedCategory ? post.categoria === selectedCategory : true) &&
           (selectedCity ? post.ciudad === selectedCity : true) &&
+          (statusFilter === "all"
+            ? !["hidden", "deleted"].includes(post.status || "active")
+            : (post.status || "active") === statusFilter) &&
           (minPrice ? productPrice >= Number(minPrice) : true) &&
           (maxPrice ? productPrice <= Number(maxPrice) : true)
         );
@@ -147,21 +183,77 @@ export default function Home() {
 
         return getCreatedValue(b) - getCreatedValue(a);
       });
-  }, [posts, search, selectedCategory, selectedCity, sortBy, minPrice, maxPrice]);
+  }, [posts, search, selectedCategory, selectedCity, statusFilter, sortBy, minPrice, maxPrice]);
 
   const activePosts = posts.filter((post) => (post.status || "active") === "active");
   const premiumCount = activePosts.filter((post) => isPremiumActive(post)).length;
   const cityCount = new Set(activePosts.map((post) => post.ciudad).filter(Boolean)).size;
   const hasActiveFilters =
-    search || selectedCategory || selectedCity || minPrice || maxPrice || sortBy !== "recent";
+    search ||
+    selectedCategory ||
+    selectedCity ||
+    statusFilter !== "active" ||
+    minPrice ||
+    maxPrice ||
+    sortBy !== "recent";
 
   function clearFilters() {
     setSearch("");
     setSelectedCategory("");
     setSelectedCity("");
+    setStatusFilter("active");
     setSortBy("recent");
     setMinPrice("");
     setMaxPrice("");
+    trackEvent("filters_cleared", { location: "home" });
+  }
+
+  async function toggleFavorite(product: ProductPost) {
+    if (!auth.currentUser) {
+      toast.error("Inicia sesión para guardar favoritos");
+      return;
+    }
+
+    if (favoriteLoading[product.id]) return;
+
+    try {
+      setFavoriteLoading((prev) => ({ ...prev, [product.id]: true }));
+      const currentFavoriteId = favoriteIds[product.id];
+
+      if (currentFavoriteId) {
+        await deleteDoc(doc(db, "favorites", currentFavoriteId));
+        await updateDoc(doc(db, "posts", product.id), { likes: increment(-1) });
+        setFavoriteIds((prev) => {
+          const next = { ...prev };
+          delete next[product.id];
+          return next;
+        });
+        setFavoritesCount((prev) => ({ ...prev, [product.id]: Math.max(0, (prev[product.id] || 0) - 1) }));
+        return;
+      }
+
+      const favoriteRef = await addDoc(collection(db, "favorites"), {
+        productId: product.id,
+        userId: auth.currentUser.uid,
+        userEmail: auth.currentUser.email,
+        titulo: product.titulo,
+        imagen: product.imagen || product.imagenes?.[0] || "",
+        precio: product.precio,
+        ciudad: product.ciudad,
+        categoria: product.categoria,
+        createdAt: serverTimestamp(),
+      });
+
+      await updateDoc(doc(db, "posts", product.id), { likes: increment(1) });
+      setFavoriteIds((prev) => ({ ...prev, [product.id]: favoriteRef.id }));
+      setFavoritesCount((prev) => ({ ...prev, [product.id]: (prev[product.id] || 0) + 1 }));
+      trackEvent(analyticsEvents.favoriteProduct, { product_id: product.id, category: product.categoria, location: "home_card" });
+    } catch (error) {
+      console.error("Error actualizando favorito:", error);
+      toast.error("No pudimos actualizar favoritos");
+    } finally {
+      setFavoriteLoading((prev) => ({ ...prev, [product.id]: false }));
+    }
   }
 
   return (
@@ -171,23 +263,60 @@ export default function Home() {
       <main className={styles.page}>
         <section className={styles.hero}>
           <div className={styles.heroContent}>
-            <p className={styles.eyebrow}>Marketplace local en México</p>
-            <h1>Compra y vende cerca de ti con confianza.</h1>
+            <p className={styles.eyebrow}>Beta cerrada · Marketplace local en México</p>
+            <h1>Vende rápido. Compra cerca. Habla directo.</h1>
             <p className={styles.heroCopy}>
-              YaVendelo reúne publicaciones verificables, filtros útiles y contacto directo
-              para que encuentres ofertas reales o vendas más rápido desde tu ciudad.
+              YaVendelo es un marketplace mobile-first para publicar productos reales,
+              encontrar ofertas por ciudad y cerrar por chat con más claridad.
             </p>
 
+            <div className={styles.heroSearchCard}>
+              <label htmlFor="hero-search">¿Qué quieres encontrar hoy?</label>
+              <div className={styles.heroSearchRow}>
+                <input
+                  id="hero-search"
+                  type="search"
+                  placeholder="iPhone, moto, sala, consola..."
+                  value={search}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    if (event.target.value.trim().length >= 3) {
+                      trackEvent(analyticsEvents.search, {
+                        search_term: event.target.value.trim(),
+                        query_length: event.target.value.trim().length,
+                        location: "hero",
+                      });
+                    }
+                  }}
+                />
+                <a href="#productos" className={styles.primaryButton}>
+                  Buscar ofertas
+                </a>
+              </div>
+              <p>Tip beta: no compartas códigos ni anticipos. Revisa el producto antes de pagar.</p>
+            </div>
+
             <div className={styles.heroActions}>
-              <Link href="/publicar" className={styles.primaryButton}>
+              <Link
+                href="/publicar"
+                className={styles.primaryButton}
+                onClick={() => trackEvent("publish_cta_clicked", { location: "home_hero" })}
+              >
                 Publicar producto
               </Link>
-              <a href="#productos" className={styles.secondaryButton}>
+              <a
+                href="#productos"
+                className={styles.secondaryButton}
+                onClick={() => trackEvent("explore_clicked", { location: "home_hero" })}
+              >
                 Explorar ofertas
               </a>
             </div>
 
             <div className={styles.trustGrid} aria-label="Beneficios de YaVendelo">
+              <Link href="/beta" className={styles.betaChip}>
+                Beta cerrada
+              </Link>
               <span>Publicación en minutos</span>
               <span>Chat directo</span>
               <span>Productos destacados</span>
@@ -196,9 +325,12 @@ export default function Home() {
 
           <div className={styles.heroPanel} aria-label="Resumen de marketplace">
             <div className={styles.heroImage}>
-              <img
+              <Image
                 src="https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?q=80&w=1200&auto=format&fit=crop"
                 alt="Persona comprando en un marketplace desde su teléfono"
+                fill
+                priority
+                sizes="(max-width: 1100px) 100vw, 46vw"
               />
             </div>
 
@@ -219,11 +351,26 @@ export default function Home() {
           </div>
         </section>
 
+        <section className={styles.confidenceBand} aria-label="Confianza y seguridad">
+          <article>
+            <strong>Compra con calma</strong>
+            <span>Pregunta por estado, entrega y forma de pago antes de cerrar.</span>
+          </article>
+          <article>
+            <strong>Chat dentro de YaVendelo</strong>
+            <span>Mantén acuerdos y dudas en la conversación del producto.</span>
+          </article>
+          <article>
+            <strong>Beta cerrada</strong>
+            <span>Tu feedback ayuda a preparar una versión pública más estable.</span>
+          </article>
+        </section>
+
         <section className={styles.searchSection} id="productos">
           <div className={styles.searchHeader}>
             <div>
               <p className={styles.sectionLabel}>Encuentra lo que necesitas</p>
-              <h2>Productos publicados recientemente</h2>
+              <h2>Explora publicaciones reales cerca de ti</h2>
             </div>
 
             {!loading && (
@@ -236,25 +383,41 @@ export default function Home() {
           <div className={styles.searchBox}>
             <input
               type="search"
-              placeholder="Buscar iPhone, sala, moto, consola..."
+              placeholder="Buscar por producto, ciudad o categoría..."
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                if (event.target.value.trim().length >= 3) {
+                  trackEvent(analyticsEvents.search, {
+                    search_term: event.target.value.trim(),
+                    query_length: event.target.value.trim().length,
+                  });
+                }
+              }}
               aria-label="Buscar productos"
             />
-            <Link href="/publicar" className={styles.compactPublishButton}>
+            <Link
+              href="/publicar"
+              className={styles.compactPublishButton}
+              onClick={() => trackEvent("publish_cta_clicked", { location: "home_search" })}
+            >
               Vender ahora
             </Link>
           </div>
 
           <div className={styles.quickFilters} aria-label="Categorías rápidas">
-            {quickCategories.map((category) => (
+            {quickMarketplaceCategories.map((category) => (
               <button
-                key={category}
+                key={category.slug}
                 type="button"
-                className={selectedCategory === category ? styles.activeChip : styles.chip}
-                onClick={() => setSelectedCategory(selectedCategory === category ? "" : category)}
+                className={selectedCategory === category.label ? styles.activeChip : styles.chip}
+                onClick={() => {
+                  const nextCategory = selectedCategory === category.label ? "" : category.label;
+                  setSelectedCategory(nextCategory);
+                  trackEvent(analyticsEvents.filterCategory, { category: category.label, enabled: Boolean(nextCategory) });
+                }}
               >
-                {category}
+                {category.icon} {category.label}
               </button>
             ))}
           </div>
@@ -266,8 +429,10 @@ export default function Home() {
               aria-label="Filtrar por categoría"
             >
               <option value="">Todas las categorías</option>
-              {categories.map((category) => (
-                <option key={category}>{category}</option>
+              {marketplaceCategories.map((category) => (
+                <option key={category.slug} value={category.label}>
+                  {category.icon} {category.label}
+                </option>
               ))}
             </select>
 
@@ -280,6 +445,16 @@ export default function Home() {
               {cities.map((city) => (
                 <option key={city}>{city}</option>
               ))}
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              aria-label="Filtrar por estado"
+            >
+              <option value="active">Solo activos</option>
+              <option value="sold">Vendidos</option>
+              <option value="all">Todos los estados</option>
             </select>
 
             <input
@@ -340,29 +515,79 @@ export default function Home() {
                 const premiumActive = isPremiumActive(post);
 
                 return (
-                  <Link key={post.id} href={`/producto/${post.id}`} className={styles.productCard}>
-                    <div className={styles.productMedia}>
-                      {premiumActive && <span className={styles.premiumBadge}>Premium</span>}
-                      <img src={getProductImage(post)} alt={post.titulo || "Producto en venta"} loading="lazy" />
-                      <span className={styles.categoryPill}>{post.categoria || "Producto"}</span>
-                    </div>
-
-                    <div className={styles.productBody}>
-                      <div>
-                        <h3>{post.titulo || "Producto disponible"}</h3>
-                        <p>
-                          {post.descripcion
-                            ? `${post.descripcion.slice(0, 110)}${post.descripcion.length > 110 ? "..." : ""}`
-                            : "Producto disponible en YaVendelo."}
-                        </p>
+                  <article
+                    key={post.id}
+                    className={styles.productCard}
+                  >
+                    <Link
+                      href={`/producto/${post.id}`}
+                      className={styles.productCardLink}
+                      onClick={() =>
+                        trackEvent("product_card_clicked", {
+                          product_id: post.id,
+                          category: post.categoria,
+                          premium: premiumActive,
+                          location: "home_grid",
+                        })
+                      }
+                    >
+                      <div className={styles.productMedia}>
+                        <div className={styles.badgeStack}>
+                          {isNewPost(post) && <span className={styles.newBadge}>Nuevo</span>}
+                          {premiumActive && <span className={styles.premiumBadge}>Destacado</span>}
+                          {post.status === "sold" && <span className={styles.soldBadge}>Vendido</span>}
+                        </div>
+                        <img
+                          src={getProductImage(post)}
+                          alt={post.titulo || "Producto en venta"}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                        <span className={styles.categoryPill}>{post.categoria || "Producto"}</span>
                       </div>
 
-                      <div className={styles.productFooter}>
-                        <strong>{formatPrice(post.precio)}</strong>
-                        <span>{post.ciudad || "México"}</span>
+                      <div className={styles.productBody}>
+                        <div className={styles.productSummary}>
+                          <div className={styles.priceLine}>
+                            <strong>{formatPrice(post.precio)}</strong>
+                            <span>{post.ciudad || "México"}</span>
+                          </div>
+                          <h3>{post.titulo || "Producto disponible"}</h3>
+                          <p>
+                            {post.descripcion
+                              ? `${post.descripcion.slice(0, 96)}${post.descripcion.length > 96 ? "..." : ""}`
+                              : "Producto disponible en YaVendelo."}
+                          </p>
+                        </div>
+
+                        <div className={styles.sellerLine}>
+                          <UserAvatar
+                            name={post.userName}
+                            email={post.userEmail}
+                            photoURL={post.userPhotoURL}
+                            size={30}
+                            label="Vendedor"
+                          />
+                          <span>{post.userName || "Vendedor YaVendelo"}</span>
+                        </div>
+
+                        <div className={styles.productFooter}>
+                          <span>{favoritesCount[post.id] || 0} favoritos</span>
+                          <span className={styles.viewCta}>Ver detalles</span>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
+                    </Link>
+
+                    <button
+                      type="button"
+                      className={favoriteIds[post.id] ? styles.favoriteButtonActive : styles.favoriteButton}
+                      onClick={() => toggleFavorite(post)}
+                      disabled={Boolean(favoriteLoading[post.id])}
+                      aria-label={favoriteIds[post.id] ? "Quitar de favoritos" : "Agregar a favoritos"}
+                    >
+                      {favoriteIds[post.id] ? "♥" : "♡"}
+                    </button>
+                  </article>
                 );
               })}
             </div>
@@ -394,12 +619,27 @@ export default function Home() {
           </div>
         </section>
 
+        <section className={styles.betaCta}>
+          <div>
+            <p className={styles.sectionLabel}>Beta cerrada</p>
+            <h2>¿Encontraste algo raro?</h2>
+            <p>Reporta errores visuales, flujos confusos o cualquier cosa que te haga dudar.</p>
+          </div>
+          <Link href="/beta#feedback" className={styles.secondaryButton}>
+            Reportar problema
+          </Link>
+        </section>
+
         <section className={styles.finalCta}>
           <div>
             <p className={styles.sectionLabel}>Empieza hoy</p>
             <h2>Convierte lo que ya no usas en una venta real.</h2>
           </div>
-          <Link href="/publicar" className={styles.primaryButton}>
+          <Link
+            href="/publicar"
+            className={styles.primaryButton}
+            onClick={() => trackEvent("publish_cta_clicked", { location: "home_final" })}
+          >
             Publicar gratis
           </Link>
         </section>
@@ -409,6 +649,7 @@ export default function Home() {
           <div>
             <Link href="/terms">Términos</Link>
             <Link href="/privacy">Privacidad</Link>
+            <Link href="/beta">Beta</Link>
             <Link href="/contacto">Contacto</Link>
           </div>
         </footer>

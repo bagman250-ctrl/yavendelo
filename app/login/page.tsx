@@ -9,6 +9,7 @@ import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { auth, db, googleProvider } from "../firebase/config";
 import TopBar from "../../components/TopBar";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -18,7 +19,7 @@ export default function LoginPage() {
 
   async function login() {
     if (!email.trim() || !password.trim()) {
-      toast.error("Completa correo y contraseña");
+      toast.error("Completa correo y contraseña para continuar");
       return;
     }
 
@@ -43,7 +44,7 @@ export default function LoginPage() {
         return;
       }
 
-      toast.error("No se pudo iniciar sesión");
+      toast.error("No se pudo iniciar sesión. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -73,6 +74,7 @@ export default function LoginPage() {
       );
 
       toast.success("Sesión iniciada con Google");
+      trackEvent(analyticsEvents.loginGoogle, { method: "google" });
       window.location.href = "/";
     } catch (error) {
       console.error("Error con Google:", error);
@@ -100,7 +102,7 @@ export default function LoginPage() {
 
       <main className="fade-in" style={pageStyle}>
         <section style={cardStyle}>
-          <div style={badgeStyle}>Bienvenido de vuelta</div>
+          <div style={badgeStyle}>Beta privada</div>
 
           <h1 style={titleStyle}>Inicia sesión.</h1>
 
@@ -136,6 +138,8 @@ export default function LoginPage() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               style={inputStyle}
+              aria-label="Correo electronico"
+              autoComplete="email"
             />
           </label>
 
@@ -150,6 +154,8 @@ export default function LoginPage() {
                 if (event.key === "Enter") login();
               }}
               style={inputStyle}
+              aria-label="Contraseña"
+              autoComplete="current-password"
             />
           </label>
 
@@ -190,7 +196,7 @@ const pageStyle: React.CSSProperties = {
 const cardStyle: React.CSSProperties = {
   width: "100%",
   maxWidth: "500px",
-  background: "rgba(255,255,255,0.05)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
   border: "1px solid rgba(255,255,255,0.1)",
   borderRadius: "8px",
   padding: "34px",
@@ -284,7 +290,7 @@ const labelStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
-  background: "#101010",
+  background: "rgba(16,16,16,0.92)",
   border: "1px solid rgba(255,255,255,0.12)",
   borderRadius: "8px",
   padding: "15px",
@@ -296,7 +302,7 @@ const inputStyle: React.CSSProperties = {
 const buttonStyle: React.CSSProperties = {
   width: "100%",
   border: "none",
-  background: "#ff7b00",
+  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",
   padding: "16px",
   borderRadius: "8px",

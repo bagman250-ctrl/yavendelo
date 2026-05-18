@@ -9,22 +9,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../../firebase/config";
 import BottomNav from "../../../components/BottomNav";
 import TopBar from "../../../components/TopBar";
-
-const categories = [
-  "Tecnología",
-  "Celulares",
-  "Computadoras",
-  "Gaming",
-  "Autos",
-  "Motos",
-  "Moda",
-  "Hogar",
-  "Deportes",
-  "Música",
-  "Mascotas",
-  "Servicios",
-  "Otros",
-];
+import { marketplaceCategories } from "@/lib/categories";
 
 type PostForm = {
   titulo: string;
@@ -43,7 +28,7 @@ export default function Editar() {
     titulo: "",
     precio: "",
     ciudad: "",
-    categoria: categories[0],
+    categoria: marketplaceCategories[0].label,
     descripcion: "",
     status: "active",
   });
@@ -70,7 +55,7 @@ export default function Editar() {
         titulo: data.titulo || "",
         precio: String(data.precio || ""),
         ciudad: data.ciudad || "",
-        categoria: data.categoria || categories[0],
+        categoria: data.categoria || marketplaceCategories[0].label,
         descripcion: data.descripcion || "",
         status: data.status || "active",
         userId: data.userId,
@@ -173,8 +158,10 @@ export default function Editar() {
             </Field>
             <Field label="Categoría">
               <select value={form.categoria} onChange={(event) => updateField("categoria", event.target.value)} style={inputStyle}>
-                {categories.map((category) => (
-                  <option key={category}>{category}</option>
+                {marketplaceCategories.map((category) => (
+                  <option key={category.slug} value={category.label}>
+                    {category.icon} {category.label}
+                  </option>
                 ))}
               </select>
             </Field>

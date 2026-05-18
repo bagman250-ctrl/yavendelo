@@ -7,6 +7,9 @@
   --orange-soft: #ffb067;
   --card: rgba(255, 255, 255, 0.05);
   --border: rgba(255, 255, 255, 0.08);
+  --muted: #b7b7b7;
+  --panel: #0f0f0f;
+  --shadow-premium: 0 24px 70px rgba(0, 0, 0, 0.38);
 }
 
 @theme inline {
@@ -27,10 +30,14 @@ html {
 
 body {
   margin: 0;
-  background: #050505;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 123, 0, 0.12), transparent 32rem),
+    #050505;
   color: #ffffff;
   font-family: Arial, Helvetica, sans-serif;
   overflow-x: hidden;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
@@ -44,8 +51,20 @@ textarea {
   font-family: inherit;
 }
 
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
 button {
-  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 button:hover {
@@ -58,6 +77,15 @@ button:active {
 
 img {
   max-width: 100%;
+}
+
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(255, 123, 0, 0.85);
+  outline-offset: 3px;
 }
 
 ::-webkit-scrollbar {
@@ -82,7 +110,7 @@ img {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(18px);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-premium);
 }
 
 .premium-gradient {
@@ -154,5 +182,16 @@ img {
   main {
     padding-left: 16px !important;
     padding-right: 16px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
