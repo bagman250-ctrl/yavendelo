@@ -4,10 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { FirebaseError } from "firebase/app";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  updateProfile,
+} from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
-import { auth, db } from "../firebase/config";
+import { auth, db, googleProvider } from "../firebase/config";
 import TopBar from "../../components/TopBar";
 
 export default function RegisterPage() {
@@ -15,6 +19,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function register() {
     if (!name.trim() || !email.trim() || !password.trim()) {
@@ -29,9 +34,15 @@ export default function RegisterPage() {
 
     try {
       setLoading(true);
-      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password
+      );
 
       await updateProfile(userCredential.user, { displayName: name.trim() });
+
       await setDoc(doc(db, "users", userCredential.user.uid), {
         uid: userCredential.user.uid,
         name: name.trim(),
@@ -69,6 +80,51 @@ export default function RegisterPage() {
     }
   }
 
+  async function registerWithGoogle() {
+    try {
+      setGoogleLoading(true);
+
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          uid: user.uid,
+          name: user.displayName || "Usuario",
+          email: user.email || "",
+          photoURL: user.photoURL || "",
+          verified: user.emailVerified || false,
+          role: "user",
+          provider: "google",
+          updatedAt: serverTimestamp(),
+          createdAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      toast.success("Sesión iniciada con Google");
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error con Google:", error);
+      const code = error instanceof FirebaseError ? error.code : "";
+
+      if (code === "auth/popup-closed-by-user") {
+        toast.error("Cerraste la ventana de Google");
+        return;
+      }
+
+      if (code === "auth/account-exists-with-different-credential") {
+        toast.error("Este correo ya existe con otro método de acceso");
+        return;
+      }
+
+      toast.error("No se pudo iniciar con Google");
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
+
   return (
     <>
       <TopBar />
@@ -76,8 +132,32 @@ export default function RegisterPage() {
       <main className="fade-in" style={pageStyle}>
         <section style={cardStyle}>
           <div style={badgeStyle}>Nueva cuenta</div>
+
           <h1 style={titleStyle}>Únete a YaVendelo.</h1>
-          <p style={copyStyle}>Crea tu perfil para publicar productos, recibir mensajes y guardar favoritos.</p>
+
+          <p style={copyStyle}>
+            Crea tu perfil para publicar productos, recibir mensajes y guardar
+            favoritos.
+          </p>
+
+          <button
+            type="button"
+            onClick={registerWithGoogle}
+            disabled={googleLoading || loading}
+            style={{
+              ...googleButtonStyle,
+              opacity: googleLoading || loading ? 0.7 : 1,
+            }}
+          >
+            <span style={googleIconStyle}>G</span>
+            {googleLoading ? "Conectando con Google..." : "Continuar con Google"}
+          </button>
+
+          <div style={dividerStyle}>
+            <span style={dividerLineStyle} />
+            <span style={dividerTextStyle}>o regístrate con correo</span>
+            <span style={dividerLineStyle} />
+          </div>
 
           <label style={fieldStyle}>
             <span style={labelStyle}>Nombre</span>
@@ -118,8 +198,11 @@ export default function RegisterPage() {
           <button
             type="button"
             onClick={register}
-            disabled={loading}
-            style={{ ...buttonStyle, opacity: loading ? 0.7 : 1 }}
+            disabled={loading || googleLoading}
+            style={{
+              ...buttonStyle,
+              opacity: loading || googleLoading ? 0.7 : 1,
+            }}
           >
             {loading ? "Creando cuenta..." : "Crear cuenta"}
           </button>
@@ -138,7 +221,8 @@ export default function RegisterPage() {
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100vh",
-  background: "linear-gradient(180deg, rgba(255,123,0,0.08), transparent 360px), #070707",
+  background:
+    "linear-gradient(180deg, rgba(255,123,0,0.08), transparent 360px), #070707",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
@@ -178,6 +262,53 @@ const copyStyle: React.CSSProperties = {
   color: "#bdbdbd",
   lineHeight: 1.7,
   marginBottom: "24px",
+};
+
+const googleButtonStyle: React.CSSProperties = {
+  width: "100%",
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "#ffffff",
+  color: "#111",
+  padding: "15px",
+  borderRadius: "8px",
+  fontWeight: "900",
+  fontSize: "15px",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "10px",
+};
+
+const googleIconStyle: React.CSSProperties = {
+  width: "24px",
+  height: "24px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#f1f1f1",
+  color: "#4285f4",
+  fontWeight: "900",
+};
+
+const dividerStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  margin: "22px 0",
+};
+
+const dividerLineStyle: React.CSSProperties = {
+  height: "1px",
+  flex: 1,
+  background: "rgba(255,255,255,0.12)",
+};
+
+const dividerTextStyle: React.CSSProperties = {
+  color: "#8f8f8f",
+  fontSize: "13px",
+  fontWeight: "800",
 };
 
 const fieldStyle: React.CSSProperties = {
