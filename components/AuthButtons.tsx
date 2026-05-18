@@ -98,6 +98,10 @@ export default function AuthButtons() {
             padding-left: 10px !important;
             padding-right: 10px !important;
           }
+
+          .auth-group a {
+            font-size: 13px !important;
+          }
         }
       `}</style>
     </div>
@@ -145,12 +149,12 @@ const profileLink: React.CSSProperties = {
   cursor: "pointer",
   minWidth: 0,
   flexShrink: 1,
-  maxWidth: "206px",
+  maxWidth: "214px",
 };
 
 const userText: React.CSSProperties = {
   display: "grid",
-  maxWidth: "136px",
+  maxWidth: "144px",
   minWidth: 0,
 };
 

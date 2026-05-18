@@ -199,15 +199,16 @@ export default function TopBar() {
       </div>
 
       <style jsx>{`
-        @media (max-width: 1120px) {
+        @media (max-width: 1180px) {
           nav {
             display: none !important;
           }
         }
 
-        @media (max-width: 980px) {
+        @media (max-width: 1099px) {
           header :global(.topbar-shell) {
             grid-template-columns: 1fr auto !important;
+            gap: 12px 18px !important;
           }
 
           header :global(.topbar-search) {
@@ -216,7 +217,7 @@ export default function TopBar() {
           }
         }
 
-        @media (max-width: 760px) {
+        @media (max-width: 767px) {
           .top-search-box {
             width: 100% !important;
             min-width: 100% !important;
@@ -225,26 +226,34 @@ export default function TopBar() {
           header :global(.brand-text) {
             font-size: 20px !important;
           }
+
+          header :global(.topbar-shell) {
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+          }
         }
 
         @media (max-width: 520px) {
           header :global(.topbar-shell) {
-            grid-template-columns: 1fr !important;
-            gap: 10px !important;
-            padding-left: 16px !important;
-            padding-right: 16px !important;
+            grid-template-columns: minmax(0, 1fr) auto !important;
+            gap: 10px 10px !important;
+          }
+
+          header :global(.brand-text) {
+            font-size: 18px !important;
           }
 
           header :global(.topbar-search) {
-            grid-column: 1 !important;
-            grid-row: 3 !important;
+            grid-column: 1 / -1 !important;
+            grid-row: 2 !important;
           }
 
           header :global(.topbar-actions) {
-            grid-column: 1 !important;
-            grid-row: 2 !important;
-            justify-content: space-between !important;
-            width: 100% !important;
+            grid-column: 2 !important;
+            grid-row: 1 !important;
+            justify-content: flex-end !important;
+            width: auto !important;
+            gap: 7px !important;
           }
         }
 
@@ -283,13 +292,15 @@ const headerStyle: React.CSSProperties = {
 };
 
 const containerStyle: React.CSSProperties = {
-  maxWidth: "1280px",
+  width: "100%",
+  maxWidth: "1440px",
   margin: "0 auto",
   padding: "12px 24px",
   display: "grid",
-  gridTemplateColumns: "minmax(310px, auto) minmax(280px, 420px) auto",
+  gridTemplateColumns: "auto minmax(340px, 520px) auto",
   alignItems: "center",
-  gap: "18px",
+  gap: "24px",
+  boxSizing: "border-box",
 };
 
 const searchSlot: React.CSSProperties = {
@@ -301,17 +312,18 @@ const searchSlot: React.CSSProperties = {
 const rightStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "10px",
+  gap: "12px",
   justifyContent: "flex-end",
   minWidth: 0,
   gridColumn: 3,
   gridRow: 1,
+  justifySelf: "end",
 };
 
 const leftStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "24px",
+  gap: "22px",
   minWidth: 0,
   gridColumn: 1,
   gridRow: 1,
@@ -337,7 +349,8 @@ const logoText: React.CSSProperties = {
 const navStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "18px",
+  gap: "14px",
+  minWidth: 0,
 };
 
 const navLink: React.CSSProperties = {
@@ -399,6 +412,8 @@ const searchBox: React.CSSProperties = {
   alignItems: "center",
   minHeight: "46px",
   width: "100%",
+  minWidth: 0,
+  overflow: "hidden",
   background: "linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.045))",
   border: "1px solid rgba(255,255,255,0.12)",
   borderRadius: "8px",
@@ -425,11 +440,13 @@ const searchInput: React.CSSProperties = {
 
 const searchSubmit: React.CSSProperties = {
   minHeight: "34px",
+  width: "84px",
+  flex: "0 0 84px",
   border: "none",
   borderRadius: "8px",
   background: "rgba(255,123,0,0.14)",
   color: "#ffb067",
-  padding: "0 11px",
+  padding: "0 10px",
   fontSize: "12px",
   fontWeight: "900",
   cursor: "pointer",
