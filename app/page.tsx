@@ -362,7 +362,7 @@ export default function Home() {
           <div className={styles.heroPanel} aria-label="Resumen de marketplace">
             <div className={styles.heroImage}>
               <Image
-                src="/hero-city-marketplace.jpg"
+                src="/brand/hero-city-marketplace.jpg"
                 alt="Ciudad moderna con edificios y una persona usando el celular para comprar y vender cerca"
                 fill
                 priority

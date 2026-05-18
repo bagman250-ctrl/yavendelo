@@ -535,25 +535,7 @@ function BellIcon({ active }: { active: boolean }) {
 function LogoIcon() {
   return (
     <span className="logo-icon" style={logoIconWrap} aria-hidden="true">
-      <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
-        <rect x="5" y="5" width="32" height="32" rx="9.5" fill="url(#yvGradient)" />
-        <rect x="5.6" y="5.6" width="30.8" height="30.8" rx="8.9" stroke="url(#innerLine)" strokeWidth="1.2" />
-        <path d="M11.4 13.1H16L20.4 20.4L24.7 13.1H29.2L22.7 23.6V29.5H18.1V23.6L11.4 13.1Z" fill="#fff7ed" />
-        <path d="M27.2 13.1H31.8L25.5 29.5H20.9L27.2 13.1Z" fill="#fff7ed" />
-        <path d="M32.2 10.2L33.1 12.1L35 13L33.1 13.9L32.2 15.8L31.3 13.9L29.4 13L31.3 12.1L32.2 10.2Z" fill="#fff7ed" opacity="0.9" />
-        <path d="M9.8 31.9H32.2" stroke="#3d1604" strokeOpacity="0.18" strokeWidth="1.5" strokeLinecap="round" />
-        <defs>
-          <linearGradient id="yvGradient" x1="5" y1="4" x2="37" y2="38" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#FFB86A" />
-            <stop offset="0.44" stopColor="#F97316" />
-            <stop offset="1" stopColor="#B63A05" />
-          </linearGradient>
-          <linearGradient id="innerLine" x1="7" y1="5" x2="35" y2="36" gradientUnits="userSpaceOnUse">
-            <stop stopColor="white" stopOpacity="0.34" />
-            <stop offset="1" stopColor="#2a0f04" stopOpacity="0.18" />
-          </linearGradient>
-        </defs>
-      </svg>
+      <img src="/brand/yavendelo-mark.svg" alt="" width="42" height="42" style={logoImageStyle} />
     </span>
   );
 }
@@ -565,10 +547,16 @@ const logoIconWrap: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   borderRadius: "11px",
-  background: "rgba(255,123,0,0.045)",
-  boxShadow: "0 12px 28px rgba(255,123,0,0.18), inset 0 1px 0 rgba(255,255,255,0.12)",
+  background: "transparent",
+  boxShadow: "none",
   transition: "transform 0.18s ease, box-shadow 0.18s ease",
   flexShrink: 0,
+};
+
+const logoImageStyle: React.CSSProperties = {
+  width: "42px",
+  height: "42px",
+  display: "block",
 };
 
 function SearchIcon() {

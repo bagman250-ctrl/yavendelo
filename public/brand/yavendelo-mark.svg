@@ -1,0 +1,43 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mark-bg" x1="13" y1="8" x2="53" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFB86A"/>
+      <stop offset="0.42" stop-color="#F97316"/>
+      <stop offset="1" stop-color="#A83205"/>
+    </linearGradient>
+    <linearGradient id="mark-inner" x1="14" y1="9" x2="51" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#2B0F03" stop-opacity="0.22"/>
+    </linearGradient>
+    <filter id="mark-shadow" x="0" y="0" width="64" height="64" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#FF7B00" flood-opacity="0.22"/>
+      <feDropShadow dx="0" dy="16" stdDeviation="12" flood-color="#000000" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#mark-shadow)">
+    <path
+      d="M16 8H48C52.4183 8 56 11.5817 56 16V48C56 52.4183 52.4183 56 48 56H16C11.5817 56 8 52.4183 8 48V16C8 11.5817 11.5817 8 16 8Z"
+      fill="url(#mark-bg)"
+    />
+    <path
+      d="M16.6 9H47.4C51.597 9 55 12.403 55 16.6V47.4C55 51.597 51.597 55 47.4 55H16.6C12.403 55 9 51.597 9 47.4V16.6C9 12.403 12.403 9 16.6 9Z"
+      stroke="url(#mark-inner)"
+      stroke-width="2"
+    />
+    <path
+      d="M16.7 20.2H24.2L31.7 32.5L39.1 20.2H46.4L35.7 36.8V45.2H28.1V36.8L16.7 20.2Z"
+      fill="#FFF7ED"
+    />
+    <path
+      d="M42.4 20.2H49.9L40.1 45.2H32.7L42.4 20.2Z"
+      fill="#FFF7ED"
+    />
+    <path
+      d="M50 14.2L51.45 17.15L54.4 18.6L51.45 20.05L50 23L48.55 20.05L45.6 18.6L48.55 17.15L50 14.2Z"
+      fill="#FFF7ED"
+      opacity="0.92"
+    />
+    <path d="M17.5 49.1H46.5" stroke="#431604" stroke-opacity="0.2" stroke-width="2.2" stroke-linecap="round"/>
+  </g>
+</svg>
