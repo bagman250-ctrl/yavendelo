@@ -259,7 +259,7 @@ export default function TopBar() {
 
         .brand-link:hover :global(.logo-icon) {
           transform: translateY(-1px) scale(1.03);
-          box-shadow: 0 16px 38px rgba(255, 123, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.32);
+          box-shadow: 0 16px 34px rgba(255, 123, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.22);
         }
 
         .top-search-box:focus-within {
@@ -536,25 +536,21 @@ function LogoIcon() {
   return (
     <span className="logo-icon" style={logoIconWrap} aria-hidden="true">
       <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
-        <rect x="4.5" y="4.5" width="33" height="33" rx="10" fill="url(#yvGradient)" />
-        <rect x="5.25" y="5.25" width="31.5" height="31.5" rx="9.25" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
-        <path
-          d="M10.8 12.8h5.9l4.2 7.2 4.2-7.2h5.7L23.7 24v5.2h-5.5v-5.1L10.8 12.8Z"
-          fill="#101010"
-        />
-        <path
-          d="M26.6 12.8h5.8L26 29.2h-5.7l2.4-5.2 1.2-2.5 2.7-8.7Z"
-          fill="#101010"
-          opacity="0.92"
-        />
-        <path d="M13.2 12.8h3.5l4.2 7.2 4.2-7.2h3.6L21 25.1l-7.8-12.3Z" fill="#ffffff" opacity="0.96" />
-        <path d="M27.3 12.8h3.6l-6.4 16.4h-3.6l6.4-16.4Z" fill="#ffffff" opacity="0.96" />
-        <path d="M9.5 31.5h23" stroke="#101010" strokeOpacity="0.22" strokeWidth="2" strokeLinecap="round" />
+        <rect x="5" y="5" width="32" height="32" rx="9.5" fill="url(#yvGradient)" />
+        <rect x="5.6" y="5.6" width="30.8" height="30.8" rx="8.9" stroke="url(#innerLine)" strokeWidth="1.2" />
+        <path d="M11.4 13.1H16L20.4 20.4L24.7 13.1H29.2L22.7 23.6V29.5H18.1V23.6L11.4 13.1Z" fill="#fff7ed" />
+        <path d="M27.2 13.1H31.8L25.5 29.5H20.9L27.2 13.1Z" fill="#fff7ed" />
+        <path d="M32.2 10.2L33.1 12.1L35 13L33.1 13.9L32.2 15.8L31.3 13.9L29.4 13L31.3 12.1L32.2 10.2Z" fill="#fff7ed" opacity="0.9" />
+        <path d="M9.8 31.9H32.2" stroke="#3d1604" strokeOpacity="0.18" strokeWidth="1.5" strokeLinecap="round" />
         <defs>
           <linearGradient id="yvGradient" x1="5" y1="4" x2="37" y2="38" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#FFC078" />
-            <stop offset="0.45" stopColor="#FF7B00" />
-            <stop offset="1" stopColor="#FF4D00" />
+            <stop stopColor="#FFB86A" />
+            <stop offset="0.44" stopColor="#F97316" />
+            <stop offset="1" stopColor="#B63A05" />
+          </linearGradient>
+          <linearGradient id="innerLine" x1="7" y1="5" x2="35" y2="36" gradientUnits="userSpaceOnUse">
+            <stop stopColor="white" stopOpacity="0.34" />
+            <stop offset="1" stopColor="#2a0f04" stopOpacity="0.18" />
           </linearGradient>
         </defs>
       </svg>
@@ -568,9 +564,9 @@ const logoIconWrap: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  borderRadius: "10px",
-  background: "rgba(255,123,0,0.08)",
-  boxShadow: "0 14px 34px rgba(255,123,0,0.28), inset 0 1px 0 rgba(255,255,255,0.14)",
+  borderRadius: "11px",
+  background: "rgba(255,123,0,0.045)",
+  boxShadow: "0 12px 28px rgba(255,123,0,0.18), inset 0 1px 0 rgba(255,255,255,0.12)",
   transition: "transform 0.18s ease, box-shadow 0.18s ease",
   flexShrink: 0,
 };
