@@ -1,0 +1,25 @@
+{
+  "name": "YaVendelo",
+  "short_name": "YaVendelo",
+  "description": "Marketplace local para comprar y vender productos cerca de ti.",
+  "theme_color": "#ff7b00",
+  "background_color": "#050505",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
+  "lang": "es-MX",
+  "categories": ["shopping", "business"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
