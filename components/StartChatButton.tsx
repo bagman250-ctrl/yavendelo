@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 
 import { auth, db } from "@/app/firebase/config";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
@@ -41,7 +41,12 @@ export default function StartChatButton({
       const buyerId = currentUser.uid;
       const buyerName =
         currentUser.displayName || currentUser.email || "Comprador";
-      const cleanSellerId = sellerId || "vendedor";
+      const cleanSellerId = sellerId?.trim();
+
+      if (!cleanSellerId) {
+        toast.error("No pudimos identificar al vendedor de esta publicaciÃ³n.");
+        return;
+      }
 
       if (cleanSellerId === buyerId) {
         toast.error("Esta publicacion es tuya. Puedes administrarla desde tu perfil.");
@@ -65,9 +70,15 @@ export default function StartChatButton({
           buyerPhotoURL: currentUser.photoURL || "",
           participants: [buyerId, cleanSellerId],
           userName: sellerName,
-          lastMessage: `Hola, me interesa: ${productTitle}`,
+          lastMessage: "Chat iniciado",
+          lastMessageAt: serverTimestamp(),
           unread: false,
           createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        await updateDoc(chatRef, {
+          participants: [buyerId, cleanSellerId],
           updatedAt: serverTimestamp(),
         });
       }

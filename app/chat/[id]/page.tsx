@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { User, onAuthStateChanged } from "firebase/auth";
 import toast from "react-hot-toast";
 import { addDoc, collection, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from "firebase/firestore";
 
@@ -17,6 +18,7 @@ type Message = {
   text: string;
   sender: string;
   senderId?: string;
+  read?: boolean;
   createdAt?: { seconds?: number } | number | string;
 };
 
@@ -29,6 +31,7 @@ type Conversation = {
   sellerName?: string;
   buyerPhotoURL?: string;
   sellerPhotoURL?: string;
+  participants?: string[];
 };
 
 function getDateValue(value?: Message["createdAt"]) {
@@ -51,6 +54,8 @@ function formatMessageTime(value?: Message["createdAt"]) {
 export default function ChatPage() {
   const params = useParams<{ id: string }>();
   const chatId = params.id;
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [text, setText] = useState("");
@@ -58,16 +63,32 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  const currentUser = auth.currentUser?.displayName || auth.currentUser?.email || "Usuario";
-  const currentPhotoURL = auth.currentUser?.photoURL || "";
+  const currentUser = user?.displayName || user?.email || "Usuario";
+  const currentPhotoURL = user?.photoURL || "";
   const otherUserName =
-    conversation?.sellerId === auth.currentUser?.uid ? conversation?.buyerName : conversation?.sellerName;
+    conversation?.sellerId === user?.uid ? conversation?.buyerName : conversation?.sellerName;
   const otherUserPhoto =
-    conversation?.sellerId === auth.currentUser?.uid ? conversation?.buyerPhotoURL : conversation?.sellerPhotoURL;
-  const otherUserRole = conversation?.sellerId === auth.currentUser?.uid ? "Comprador" : "Vendedor";
+    conversation?.sellerId === user?.uid ? conversation?.buyerPhotoURL : conversation?.sellerPhotoURL;
+  const otherUserRole = conversation?.sellerId === user?.uid ? "Comprador" : "Vendedor";
 
   useEffect(() => {
-    if (!chatId) return;
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!chatId || authLoading) return;
+
+    if (!user) {
+      setMessages([]);
+      setConversation(null);
+      setLoading(false);
+      return;
+    }
 
     let unsubscribeMessages: (() => void) | undefined;
 
@@ -110,12 +131,13 @@ export default function ChatPage() {
     loadConversation();
 
     return () => unsubscribeMessages?.();
-  }, [chatId]);
+  }, [authLoading, chatId, user]);
 
-  async function sendMessage() {
+  async function sendMessage(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
     if (!text.trim()) return;
 
-    if (!auth.currentUser) {
+    if (!user) {
       toast.error("Debes iniciar sesión");
       return;
     }
@@ -129,19 +151,26 @@ export default function ChatPage() {
       await addDoc(collection(db, "conversations", chatId, "messages"), {
         text: messageText,
         sender: currentUser,
-        senderId: auth.currentUser.uid,
+        senderId: user.uid,
         createdAt: serverTimestamp(),
+        read: false,
       });
+
+      const participants = conversation?.participants?.length
+        ? conversation.participants
+        : [conversation?.buyerId, conversation?.sellerId].filter(Boolean);
 
       await updateDoc(doc(db, "conversations", chatId), {
         lastMessage: messageText,
+        lastMessageAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        participants,
       });
 
-      const receiverId = conversation?.sellerId === auth.currentUser.uid ? conversation?.buyerId : conversation?.sellerId;
+      const receiverId = conversation?.sellerId === user.uid ? conversation?.buyerId : conversation?.sellerId;
 
-      if (receiverId && receiverId !== auth.currentUser.uid) {
-        await addDoc(collection(db, "notifications"), {
+      if (receiverId && receiverId !== user.uid) {
+        addDoc(collection(db, "notifications"), {
           userId: receiverId,
           title: "Nuevo mensaje",
           message: `${currentUser}: ${messageText}`,
@@ -149,6 +178,8 @@ export default function ChatPage() {
           read: false,
           link: `/chat/${chatId}`,
           createdAt: serverTimestamp(),
+        }).catch((notificationError) => {
+          console.error("Error creando notificaciÃ³n de chat:", notificationError);
         });
       }
     } catch (error) {
@@ -160,7 +191,7 @@ export default function ChatPage() {
     }
   }
 
-  if (!auth.currentUser && !loading) {
+  if (!user && !authLoading && !loading) {
     return (
       <>
         <TopBar />
@@ -226,7 +257,7 @@ export default function ChatPage() {
             )}
 
             {messages.map((message) => {
-              const isMine = message.senderId === auth.currentUser?.uid;
+              const isMine = message.senderId === user?.uid;
               const messagePhoto = isMine
                 ? currentPhotoURL
                 : conversation?.sellerId === message.senderId
@@ -251,24 +282,22 @@ export default function ChatPage() {
             <div ref={bottomRef} />
           </div>
 
-          <footer style={inputContainer}>
+          <form style={inputContainer} onSubmit={sendMessage}>
             <div style={inputWrap}>
               <input
                 value={text}
                 onChange={(event) => setText(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") sendMessage();
-                }}
                 placeholder="Escribe un mensaje seguro..."
                 aria-label="Mensaje"
                 style={inputStyle}
+                disabled={sending}
               />
               <span style={inputHint}>Evita códigos, contraseñas o anticipos.</span>
             </div>
-            <button type="button" onClick={sendMessage} disabled={sending || !text.trim()} style={{ ...sendButton, opacity: sending || !text.trim() ? 0.7 : 1 }}>
-              {sending ? "..." : "Enviar"}
+            <button type="submit" disabled={sending || !text.trim()} style={{ ...sendButton, opacity: sending || !text.trim() ? 0.7 : 1 }}>
+              {sending ? "Enviando..." : "Enviar"}
             </button>
-          </footer>
+          </form>
         </section>
 
         <BottomNav />
