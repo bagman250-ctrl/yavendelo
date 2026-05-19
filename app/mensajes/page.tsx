@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { User, onAuthStateChanged } from "firebase/auth";
-import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import toast from "react-hot-toast";
 
 import { auth, db } from "@/app/firebase/config";
@@ -18,6 +18,8 @@ type Conversation = {
   lastMessage?: string;
   unread?: boolean;
   productTitle?: string;
+  productImage?: string;
+  lastMessageAt?: DateLike;
   updatedAt?: DateLike;
   buyerId?: string;
   sellerId?: string;
@@ -71,19 +73,21 @@ export default function MensajesPage() {
       setLoading(true);
       const conversationsQuery = query(
         collection(db, "conversations"),
-        where("participants", "array-contains", firebaseUser.uid),
-        orderBy("updatedAt", "desc")
+        where("participants", "array-contains", firebaseUser.uid)
       );
 
       unsubscribeMessages = onSnapshot(
         conversationsQuery,
         (snapshot) => {
-          const data = snapshot.docs.map((document) => ({
-            id: document.id,
-            ...document.data(),
-          })) as Conversation[];
+          const data = snapshot.docs
+            .map((document) => ({
+              id: document.id,
+              ...document.data(),
+            })) as Conversation[];
 
-          setConversations(data);
+          setConversations(
+            data.sort((a, b) => getDateValue(b.lastMessageAt || b.updatedAt) - getDateValue(a.lastMessageAt || a.updatedAt))
+          );
           setLoading(false);
         },
         (error) => {
@@ -195,6 +199,9 @@ export default function MensajesPage() {
                         {conversation.productTitle && <span style={productBadge}>{conversation.productTitle}</span>}
                         <p style={messageStyle}>{conversation.lastMessage || "Sin mensajes todavía"}</p>
                       </div>
+                      {conversation.productImage && (
+                        <img src={conversation.productImage} alt="" loading="lazy" style={productThumb} />
+                      )}
                     </article>
                   </Link>
                 );
@@ -352,6 +359,16 @@ const productBadge: React.CSSProperties = {
   padding: "7px 9px",
   fontSize: "12px",
   fontWeight: "900",
+};
+
+const productThumb: React.CSSProperties = {
+  width: "68px",
+  height: "68px",
+  borderRadius: "8px",
+  objectFit: "cover",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "#141414",
+  flexShrink: 0,
 };
 
 const messageStyle: React.CSSProperties = {

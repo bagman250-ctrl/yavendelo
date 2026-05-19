@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { collection, doc, getDocs, limit, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 
 import { auth, db } from "@/app/firebase/config";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
@@ -12,16 +12,20 @@ interface StartChatButtonProps {
   productId: string;
   productTitle?: string;
   sellerId?: string;
+  sellerEmail?: string;
   sellerName?: string;
   sellerPhotoURL?: string;
+  productImage?: string;
 }
 
 export default function StartChatButton({
   productId,
   productTitle = "Producto",
-  sellerId = "vendedor",
+  sellerId = "",
+  sellerEmail = "",
   sellerName = "Vendedor",
   sellerPhotoURL = "",
+  productImage = "",
 }: StartChatButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -41,10 +45,20 @@ export default function StartChatButton({
       const buyerId = currentUser.uid;
       const buyerName =
         currentUser.displayName || currentUser.email || "Comprador";
-      const cleanSellerId = sellerId?.trim();
+      let cleanSellerId = sellerId?.trim();
+
+      if (!cleanSellerId && sellerEmail.trim()) {
+        try {
+          const usersByEmail = query(collection(db, "users"), where("email", "==", sellerEmail.trim()), limit(1));
+          const usersSnapshot = await getDocs(usersByEmail);
+          cleanSellerId = usersSnapshot.docs[0]?.id || "";
+        } catch (lookupError) {
+          console.error("Error buscando vendedor por email:", lookupError);
+        }
+      }
 
       if (!cleanSellerId) {
-        toast.error("No pudimos identificar al vendedor de esta publicaciÃ³n.");
+        toast.error("No pudimos identificar al vendedor. Intenta desde otra publicacion o vuelve mas tarde.");
         return;
       }
 
@@ -55,14 +69,17 @@ export default function StartChatButton({
 
       const chatId = `${productId}_${buyerId}_${cleanSellerId}`;
       const chatRef = doc(db, "conversations", chatId);
-      const chatSnap = await getDoc(chatRef);
+      const now = serverTimestamp();
 
-      if (!chatSnap.exists()) {
-        await setDoc(chatRef, {
+      await setDoc(
+        chatRef,
+        {
           productId,
           productTitle,
+          productImage,
           sellerId: cleanSellerId,
           sellerName,
+          sellerEmail,
           sellerPhotoURL,
           buyerId,
           buyerName,
@@ -71,24 +88,20 @@ export default function StartChatButton({
           participants: [buyerId, cleanSellerId],
           userName: sellerName,
           lastMessage: "Chat iniciado",
-          lastMessageAt: serverTimestamp(),
+          lastMessageAt: now,
           unread: false,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      } else {
-        await updateDoc(chatRef, {
-          participants: [buyerId, cleanSellerId],
-          updatedAt: serverTimestamp(),
-        });
-      }
+          createdAt: now,
+          updatedAt: now,
+        },
+        { merge: true }
+      );
 
       trackEvent(analyticsEvents.startChat, { product_id: productId });
-      toast.success("Chat abierto. Mantén el trato dentro de YaVendelo.");
+      toast.success("Chat abierto. Manten el trato dentro de YaVendelo.");
       router.push(`/chat/${chatId}`);
     } catch (error) {
       console.error("Error iniciando chat:", error);
-      toast.error("No se pudo abrir el chat");
+      toast.error("No se pudo abrir el chat. Revisa tu conexion e intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -113,7 +126,7 @@ export default function StartChatButton({
         boxShadow: "0 14px 30px rgba(255,123,0,0.24)",
       }}
     >
-      {loading ? "Abriendo..." : "Enviar mensaje"}
+      {loading ? "Abriendo chat..." : "Contactar vendedor"}
     </button>
   );
 }

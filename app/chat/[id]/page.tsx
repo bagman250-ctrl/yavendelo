@@ -25,6 +25,7 @@ type Message = {
 type Conversation = {
   id: string;
   productTitle?: string;
+  productImage?: string;
   buyerId?: string;
   sellerId?: string;
   buyerName?: string;
@@ -158,14 +159,24 @@ export default function ChatPage() {
 
       const participants = conversation?.participants?.length
         ? conversation.participants
-        : [conversation?.buyerId, conversation?.sellerId].filter(Boolean);
+        : [conversation?.buyerId, conversation?.sellerId].filter((participant): participant is string => Boolean(participant));
 
-      await updateDoc(doc(db, "conversations", chatId), {
+      const conversationUpdate: {
+        lastMessage: string;
+        lastMessageAt: ReturnType<typeof serverTimestamp>;
+        updatedAt: ReturnType<typeof serverTimestamp>;
+        participants?: string[];
+      } = {
         lastMessage: messageText,
         lastMessageAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        participants,
-      });
+      };
+
+      if (participants.length > 0) {
+        conversationUpdate.participants = participants;
+      }
+
+      await updateDoc(doc(db, "conversations", chatId), conversationUpdate);
 
       const receiverId = conversation?.sellerId === user.uid ? conversation?.buyerId : conversation?.sellerId;
 
@@ -226,6 +237,9 @@ export default function ChatPage() {
               size={54}
               label={`Avatar de ${otherUserRole.toLowerCase()}`}
             />
+            {conversation?.productImage && (
+              <img src={conversation.productImage} alt="" loading="lazy" style={chatProductImage} />
+            )}
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={roleText}>{otherUserRole}</p>
               <h1 style={chatTitle}>{conversation?.productTitle || "Conversación"}</h1>
@@ -358,6 +372,16 @@ const backButton: React.CSSProperties = {
   fontSize: "13px",
   fontWeight: "900",
   textDecoration: "none",
+};
+
+const chatProductImage: React.CSSProperties = {
+  width: "54px",
+  height: "54px",
+  borderRadius: "8px",
+  objectFit: "cover",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "#141414",
+  flexShrink: 0,
 };
 
 const roleText: React.CSSProperties = {
