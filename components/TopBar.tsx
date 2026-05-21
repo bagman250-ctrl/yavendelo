@@ -7,6 +7,7 @@ import { User, onAuthStateChanged } from "firebase/auth";
 import { collection, doc, limit, onSnapshot, orderBy, query, updateDoc, where } from "firebase/firestore";
 
 import { auth, db } from "@/app/firebase/config";
+import { hideEmailsFromNotification } from "@/lib/notificationActors";
 import AuthButtons from "./AuthButtons";
 
 type NotificationPreview = {
@@ -169,7 +170,7 @@ export default function TopBar() {
                       <span style={notificationDot(notification.read)} />
                       <span style={{ minWidth: 0 }}>
                         <strong>{notification.title || "Nueva actividad"}</strong>
-                        <small>{notification.message || "Tienes una notificación nueva."}</small>
+                        <small>{hideEmailsFromNotification(notification.message || "Tienes una notificación nueva.")}</small>
                       </span>
                     </Link>
                   ))

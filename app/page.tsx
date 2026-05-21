@@ -24,6 +24,7 @@ import TopBar from "../components/TopBar";
 import UserAvatar from "@/components/UserAvatar";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { marketplaceCategories, quickMarketplaceCategories } from "@/lib/categories";
+import { getNotificationActorName } from "@/lib/notificationActors";
 import styles from "./page.module.css";
 
 type ProductPost = {
@@ -41,6 +42,7 @@ type ProductPost = {
   likes?: number;
   createdAt?: { seconds?: number } | number | string;
   userName?: string;
+  userId?: string;
   userEmail?: string;
   userPhotoURL?: string;
 };
@@ -284,6 +286,24 @@ export default function Home() {
       setFavoriteIds((prev) => ({ ...prev, [product.id]: favoriteRef.id }));
       setFavoritesCount((prev) => ({ ...prev, [product.id]: (prev[product.id] || 0) + 1 }));
       trackEvent(analyticsEvents.favoriteProduct, { product_id: product.id, category: product.categoria, location: "home_card" });
+
+      if (product.userId && product.userId !== auth.currentUser.uid) {
+        const actorName = await getNotificationActorName(db, auth.currentUser);
+
+        await addDoc(collection(db, "notifications"), {
+          userId: product.userId,
+          actorId: auth.currentUser.uid,
+          actorName,
+          productId: product.id,
+          productTitle: product.titulo || "tu producto",
+          title: "Nuevo favorito",
+          message: `${actorName} agregó tu producto a favoritos.`,
+          type: "favorite",
+          read: false,
+          link: `/producto/${product.id}`,
+          createdAt: serverTimestamp(),
+        });
+      }
     } catch (error) {
       console.error("Error actualizando favorito:", error);
       toast.error("No pudimos actualizar favoritos");

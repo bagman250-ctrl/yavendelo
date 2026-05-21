@@ -14,6 +14,7 @@ import TopBar from "../../../components/TopBar";
 import UserAvatar from "../../../components/UserAvatar";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { getCategoryHref } from "@/lib/categories";
+import { getNotificationActorName } from "@/lib/notificationActors";
 
 type Product = {
   id: string;
@@ -198,10 +199,16 @@ export default function ProductClient({ productId }: { productId: string }) {
       trackEvent(analyticsEvents.favoriteProduct, { product_id: product.id, category: product.categoria });
 
       if (product.userId && product.userId !== auth.currentUser.uid) {
+        const actorName = await getNotificationActorName(db, auth.currentUser);
+
         await addDoc(collection(db, "notifications"), {
           userId: product.userId,
-          title: "Guardaron tu producto",
-          message: `${auth.currentUser.email} guardó "${product.titulo}" en favoritos.`,
+          actorId: auth.currentUser.uid,
+          actorName,
+          productId: product.id,
+          productTitle: product.titulo || "tu producto",
+          title: "Nuevo favorito",
+          message: `${actorName} agregó tu producto a favoritos.`,
           type: "favorite",
           read: false,
           link: `/producto/${product.id}`,

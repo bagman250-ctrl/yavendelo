@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { addDoc, collection, deleteDoc, doc, getDocs, increment, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
 
 import { auth, db } from "../app/firebase/config";
+import { getNotificationActorName } from "@/lib/notificationActors";
 
 type Product = {
   id: string;
@@ -16,6 +17,9 @@ type Product = {
   ciudad?: string;
   categoria?: string;
   likes?: number;
+  userId?: string;
+  userName?: string;
+  userEmail?: string;
 };
 
 function formatPrice(value?: number | string) {
@@ -96,6 +100,24 @@ export default function ProductCard({ product }: { product: Product }) {
       });
       setLiked(true);
       setFavoritesCount((prev) => prev + 1);
+
+      if (product.userId && product.userId !== auth.currentUser.uid) {
+        const actorName = await getNotificationActorName(db, auth.currentUser);
+
+        await addDoc(collection(db, "notifications"), {
+          userId: product.userId,
+          actorId: auth.currentUser.uid,
+          actorName,
+          productId: product.id,
+          productTitle: product.titulo || "tu producto",
+          title: "Nuevo favorito",
+          message: `${actorName} agregó tu producto a favoritos.`,
+          type: "favorite",
+          read: false,
+          link: `/producto/${product.id}`,
+          createdAt: serverTimestamp(),
+        });
+      }
     } catch (error) {
       console.error("Error actualizando favorito:", error);
     }

@@ -8,6 +8,7 @@ import { collection, doc, getDocs, onSnapshot, orderBy, query, updateDoc, where,
 import { auth, db } from "@/app/firebase/config";
 import BottomNav from "@/components/BottomNav";
 import TopBar from "@/components/TopBar";
+import { hideEmailsFromNotification } from "@/lib/notificationActors";
 
 type NotificationItem = {
   id: string;
@@ -171,7 +172,7 @@ export default function NotificacionesPage() {
                     <span style={typeBadge}>{getNotificationLabel(notification.type)}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <h2 style={notificationTitle}>{notification.title || "Nueva notificación"}</h2>
-                      <p style={notificationText}>{notification.message || "Tienes actividad nueva."}</p>
+                      <p style={notificationText}>{hideEmailsFromNotification(notification.message || "Tienes actividad nueva.")}</p>
                     </div>
                     {!notification.read && <span style={unreadDot} />}
                   </article>
