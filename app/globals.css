@@ -182,6 +182,7 @@ a {
   main {
     padding-left: 16px !important;
     padding-right: 16px !important;
+    padding-bottom: calc(150px + env(safe-area-inset-bottom)) !important;
   }
 }
 

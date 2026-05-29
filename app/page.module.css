@@ -813,7 +813,7 @@
 
 @media (max-width: 760px) {
   .page {
-    padding: 0 16px 128px;
+    padding: 0 16px calc(150px + env(safe-area-inset-bottom));
   }
 
   .hero {
@@ -823,11 +823,23 @@
   }
 
   .heroContent h1 {
-    font-size: 44px;
+    font-size: 42px !important;
+    line-height: 1.04;
   }
 
   .heroCopy {
     font-size: 16px;
+    margin-top: 18px;
+    line-height: 1.6;
+  }
+
+  .heroSearchCard {
+    margin-top: 22px;
+    padding: 16px;
+  }
+
+  .heroSearchRow input {
+    min-height: 50px;
   }
 
   .searchHeader,
@@ -847,7 +859,7 @@
   }
 
   .heroImage {
-    height: 300px;
+    height: 280px;
   }
 
   .statRow,
@@ -897,5 +909,23 @@
     flex: 0 0 auto;
     scroll-snap-align: start;
     white-space: nowrap;
+  }
+}
+
+@media (max-width: 420px) {
+  .heroContent h1 {
+    font-size: 38px !important;
+  }
+
+  .trustGrid {
+    gap: 8px;
+  }
+
+  .trustGrid span,
+  .betaChip,
+  .chip,
+  .activeChip {
+    padding: 9px 10px;
+    font-size: 13px;
   }
 }

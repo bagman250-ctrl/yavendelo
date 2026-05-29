@@ -95,6 +95,14 @@ export default function BottomNav() {
             display: none !important;
           }
         }
+
+        @media (max-width: 420px) {
+          nav {
+            width: calc(100% - 20px) !important;
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+          }
+        }
       `}</style>
     </>
   );
@@ -102,16 +110,16 @@ export default function BottomNav() {
 
 const navStyle: React.CSSProperties = {
   position: "fixed",
-  bottom: "18px",
+  bottom: "calc(12px + env(safe-area-inset-bottom))",
   left: "50%",
   transform: "translateX(-50%)",
-  width: "94%",
+  width: "calc(100% - 28px)",
   maxWidth: "520px",
   background: "rgba(15,15,15,0.92)",
   backdropFilter: "blur(18px)",
   border: "1px solid rgba(255,255,255,0.1)",
   borderRadius: "8px",
-  padding: "12px 10px",
+  padding: "11px 10px",
   display: "flex",
   justifyContent: "space-around",
   alignItems: "center",
@@ -128,7 +136,7 @@ const link: React.CSSProperties = {
   gap: "5px",
   fontSize: "12px",
   fontWeight: "800",
-  minWidth: "58px",
+  minWidth: "52px",
 };
 
 const icon: React.CSSProperties = {
@@ -149,8 +157,8 @@ const text: React.CSSProperties = {
 };
 
 const plusButton: React.CSSProperties = {
-  width: "62px",
-  height: "62px",
+  width: "58px",
+  height: "58px",
   borderRadius: "8px",
   background: "linear-gradient(135deg, #ffb067, #ff7b00)",
   color: "#101010",

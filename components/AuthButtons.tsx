@@ -80,7 +80,21 @@ export default function AuthButtons() {
           }
 
           .auth-group {
+            flex: 1 !important;
             gap: 8px !important;
+            justify-content: flex-end !important;
+            min-width: 0 !important;
+          }
+
+          .auth-group a {
+            flex: 1 1 0 !important;
+            justify-content: center !important;
+            min-width: 0 !important;
+            white-space: nowrap !important;
+          }
+
+          .auth-group button {
+            justify-content: center !important;
           }
         }
 
@@ -101,6 +115,14 @@ export default function AuthButtons() {
 
           .auth-group a {
             font-size: 13px !important;
+          }
+        }
+
+        @media (max-width: 380px) {
+          .auth-group a {
+            font-size: 12px !important;
+            padding-left: 8px !important;
+            padding-right: 8px !important;
           }
         }
       `}</style>

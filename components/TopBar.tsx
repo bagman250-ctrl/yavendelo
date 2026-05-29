@@ -114,7 +114,7 @@ export default function TopBar() {
   return (
     <header style={headerStyle}>
       <div className="topbar-shell" style={containerStyle}>
-        <div style={leftStyle}>
+        <div className="topbar-brand" style={leftStyle}>
           <Link href="/" className="brand-link" style={{ textDecoration: "none", color: "white" }} aria-label="Ir al inicio">
             <div style={logoStyle}>
               <LogoIcon />
@@ -219,42 +219,52 @@ export default function TopBar() {
         }
 
         @media (max-width: 767px) {
+          header :global(.topbar-shell) {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+            padding: 12px 16px !important;
+          }
+
+          header :global(.topbar-brand) {
+            grid-column: 1 !important;
+            grid-row: 1 !important;
+          }
+
+          header :global(.topbar-search) {
+            grid-column: 1 !important;
+            grid-row: 2 !important;
+          }
+
+          header :global(.topbar-actions) {
+            grid-column: 1 !important;
+            grid-row: 3 !important;
+            justify-content: space-between !important;
+            width: 100% !important;
+            gap: 10px !important;
+          }
+
           .top-search-box {
             width: 100% !important;
             min-width: 100% !important;
+            min-height: 44px !important;
           }
 
           header :global(.brand-text) {
             font-size: 20px !important;
           }
-
-          header :global(.topbar-shell) {
-            padding-left: 16px !important;
-            padding-right: 16px !important;
-          }
         }
 
         @media (max-width: 520px) {
           header :global(.topbar-shell) {
-            grid-template-columns: minmax(0, 1fr) auto !important;
-            gap: 10px 10px !important;
+            gap: 9px !important;
           }
 
           header :global(.brand-text) {
             font-size: 18px !important;
           }
 
-          header :global(.topbar-search) {
-            grid-column: 1 / -1 !important;
-            grid-row: 2 !important;
-          }
-
           header :global(.topbar-actions) {
-            grid-column: 2 !important;
-            grid-row: 1 !important;
-            justify-content: flex-end !important;
-            width: auto !important;
-            gap: 7px !important;
+            gap: 8px !important;
           }
         }
 
