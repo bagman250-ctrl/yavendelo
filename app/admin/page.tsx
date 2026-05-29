@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 import { User, onAuthStateChanged } from "firebase/auth";
 import {
   collection,
-  deleteDoc,
   doc,
   getDocs,
   orderBy,
@@ -14,10 +13,12 @@ import {
   updateDoc,
 } from "firebase/firestore";
 
-import { auth, db } from "@/app/firebase/config";
+import { auth, db, storage } from "@/app/firebase/config";
 import BottomNav from "@/components/BottomNav";
+import DeletePostDialog from "@/components/DeletePostDialog";
 import TopBar from "@/components/TopBar";
 import { isAdminEmail } from "@/lib/admin";
+import { deletePostWithCleanup } from "@/lib/deletePost";
 
 type TimeLike =
   | number
@@ -36,6 +37,7 @@ type Post = {
   categoria?: string;
   imagen?: string;
   imagenes?: string[];
+  userId?: string;
   userEmail?: string;
   userName?: string;
   featured?: boolean;
@@ -154,6 +156,8 @@ export default function AdminPage() {
   const [betaFeedback, setBetaFeedback] = useState<BetaFeedback[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [postToDelete, setPostToDelete] = useState<Post | null>(null);
+  const [deletingPost, setDeletingPost] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -273,20 +277,24 @@ export default function AdminPage() {
     }
   }
 
-  async function deletePost(postId: string) {
-    const confirmed = window.confirm(
-      "Seguro que quieres eliminar esta publicacion?"
-    );
-
-    if (!confirmed) return;
-
+  async function deletePost() {
+    if (!postToDelete) return;
     try {
-      await deleteDoc(doc(db, "posts", postId));
-      setPosts((prev) => prev.filter((post) => post.id !== postId));
-      toast.success("Publicacion eliminada");
+      setDeletingPost(true);
+      await deletePostWithCleanup({
+        db,
+        storage,
+        post: postToDelete,
+      });
+
+      setPosts((prev) => prev.filter((post) => post.id !== postToDelete.id));
+      setPostToDelete(null);
+      toast.success("Publicación eliminada");
     } catch (error) {
-      console.error("Error eliminando publicacion:", error);
+      console.error("Error eliminando publicación:", error);
       toast.error("No se pudo eliminar");
+    } finally {
+      setDeletingPost(false);
     }
   }
 
@@ -534,7 +542,7 @@ export default function AdminPage() {
                     post={post}
                     onToggle={toggleFeatured}
                     onVisibilityChange={setPostVisibility}
-                    onDelete={deletePost}
+                    onDelete={setPostToDelete}
                   />
                 ))}
               </div>
@@ -733,6 +741,16 @@ export default function AdminPage() {
           </section>
         </section>
 
+        <DeletePostDialog
+          open={Boolean(postToDelete)}
+          title={postToDelete?.titulo}
+          loading={deletingPost}
+          onCancel={() => {
+            if (!deletingPost) setPostToDelete(null);
+          }}
+          onConfirm={deletePost}
+        />
+
         <BottomNav />
       </main>
     </>
@@ -766,7 +784,7 @@ function AdminPostCard({
   post: Post;
   onToggle: (postId: string, currentValue: boolean) => void;
   onVisibilityChange: (postId: string, nextStatus: "active" | "hidden") => void;
-  onDelete: (postId: string) => void;
+  onDelete: (post: Post) => void;
 }) {
   const premiumActive = isPremiumActive(post);
   const image = post.imagen || post.imagenes?.[0] || "/placeholder.png";
@@ -799,7 +817,7 @@ function AdminPostCard({
         >
           {premiumActive ? "Quitar premium" : "Destacar 7 dias"}
         </button>
-        <button type="button" onClick={() => onDelete(post.id)} style={dangerButton}>
+        <button type="button" onClick={() => onDelete(post)} style={dangerButton}>
           Eliminar
         </button>
         <button

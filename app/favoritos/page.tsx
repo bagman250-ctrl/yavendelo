@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { User, onAuthStateChanged } from "firebase/auth";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 
 import { auth, db } from "../firebase/config";
 import BottomNav from "../../components/BottomNav";
@@ -46,12 +46,24 @@ export default function FavoritosPage() {
       try {
         const q = query(collection(db, "favorites"), where("userId", "==", currentUser.uid));
         const snapshot = await getDocs(q);
-        const data = snapshot.docs.map((document) => ({
-          id: document.id,
-          ...document.data(),
-        })) as Favorite[];
+        const checkedFavorites = await Promise.all(
+          snapshot.docs.map(async (document) => {
+            const favorite = {
+              id: document.id,
+              ...document.data(),
+            } as Favorite;
 
-        setFavorites(data);
+            if (!favorite.productId) return favorite;
+
+            const productSnapshot = await getDoc(doc(db, "posts", favorite.productId));
+            if (productSnapshot.exists()) return favorite;
+
+            await deleteDoc(doc(db, "favorites", document.id));
+            return null;
+          })
+        );
+
+        setFavorites(checkedFavorites.filter(Boolean) as Favorite[]);
       } catch (error) {
         console.error("Error cargando favoritos:", error);
       } finally {

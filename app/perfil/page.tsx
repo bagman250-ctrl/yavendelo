@@ -9,11 +9,13 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 import { auth, db, storage } from "../firebase/config";
 import BottomNav from "../../components/BottomNav";
+import DeletePostDialog from "../../components/DeletePostDialog";
 import PremiumLoading from "../../components/PremiumLoading";
 import SafeTradeNote from "../../components/SafeTradeNote";
 import TopBar from "../../components/TopBar";
 import UserAvatar from "../../components/UserAvatar";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { deletePostWithCleanup } from "@/lib/deletePost";
 import { compressProfileImage, validateProfileImage } from "@/lib/profileImage";
 
 type UserPost = {
@@ -29,6 +31,7 @@ type UserPost = {
   likes?: number;
   status?: string;
   views?: number;
+  userId?: string;
 };
 
 function isPremiumActive(post: UserPost) {
@@ -59,6 +62,8 @@ export default function PerfilPage() {
   const [photoPreview, setPhotoPreview] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<UserPost | null>(null);
+  const [deletingPost, setDeletingPost] = useState(false);
 
   async function loadPosts(userId: string) {
     try {
@@ -259,6 +264,34 @@ export default function PerfilPage() {
     }
   }
 
+  async function confirmDeletePost() {
+    if (!user || !postToDelete) return;
+
+    if (postToDelete.userId && postToDelete.userId !== user.uid) {
+      toast.error("Solo puedes eliminar tus propias publicaciones");
+      setPostToDelete(null);
+      return;
+    }
+
+    try {
+      setDeletingPost(true);
+      await deletePostWithCleanup({
+        db,
+        storage,
+        post: postToDelete,
+      });
+
+      setPosts((prev) => prev.filter((post) => post.id !== postToDelete.id));
+      toast.success("Publicación eliminada correctamente");
+      setPostToDelete(null);
+    } catch (error) {
+      console.error("Error eliminando publicación:", error);
+      toast.error("No se pudo eliminar la publicación");
+    } finally {
+      setDeletingPost(false);
+    }
+  }
+
   if (loading) return <PremiumLoading label="Cargando perfil..." />;
 
   if (!user) {
@@ -435,6 +468,14 @@ export default function PerfilPage() {
                           <button type="button" style={primaryButtonFull}>Destacar</button>
                         </Link>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => setPostToDelete(post)}
+                        style={deleteButtonFull}
+                        aria-label={`Eliminar ${post.titulo || "publicación"}`}
+                      >
+                        Eliminar
+                      </button>
                     </div>
                   </article>
                 );
@@ -442,6 +483,16 @@ export default function PerfilPage() {
             </section>
           )}
         </section>
+
+        <DeletePostDialog
+          open={Boolean(postToDelete)}
+          title={postToDelete?.titulo}
+          loading={deletingPost}
+          onCancel={() => {
+            if (!deletingPost) setPostToDelete(null);
+          }}
+          onConfirm={confirmDeletePost}
+        />
 
         <BottomNav />
         <style jsx>{`
@@ -729,6 +780,13 @@ const premiumButton: React.CSSProperties = {
   ...secondaryButton,
   flex: 1,
   color: "#ffb067",
+};
+
+const deleteButtonFull: React.CSSProperties = {
+  ...secondaryButton,
+  flex: "1 1 100%",
+  border: "1px solid rgba(255,77,77,0.26)",
+  color: "#ff9b95",
 };
 
 const emptyCard: React.CSSProperties = {

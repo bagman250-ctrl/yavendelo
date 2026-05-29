@@ -6,6 +6,12 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email == "bagman250@gmail.com";
+    }
+
     function isImage() {
       return request.resource.contentType.matches('image/.*');
     }
@@ -17,19 +23,25 @@ service firebase.storage {
     match /posts/{userId}/{fileName} {
       allow read: if true;
 
-      allow write: if signedIn()
+      allow create, update: if signedIn()
         && request.auth.uid == userId
         && isImage()
         && isValidSize();
+
+      allow delete: if signedIn()
+        && (request.auth.uid == userId || isAdmin());
     }
 
     match /users/{userId}/{fileName} {
       allow read: if true;
 
-      allow write: if signedIn()
+      allow create, update: if signedIn()
         && request.auth.uid == userId
         && isImage()
         && isValidSize();
+
+      allow delete: if signedIn()
+        && request.auth.uid == userId;
     }
 
     match /{allPaths=**} {

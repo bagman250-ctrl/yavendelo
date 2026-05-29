@@ -6,10 +6,12 @@ import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 
-import { auth, db } from "../../firebase/config";
+import { auth, db, storage } from "../../firebase/config";
 import BottomNav from "../../../components/BottomNav";
+import DeletePostDialog from "../../../components/DeletePostDialog";
 import TopBar from "../../../components/TopBar";
 import { marketplaceCategories } from "@/lib/categories";
+import { deletePostWithCleanup } from "@/lib/deletePost";
 
 type PostForm = {
   titulo: string;
@@ -19,6 +21,8 @@ type PostForm = {
   descripcion: string;
   status?: string;
   userId?: string;
+  imagen?: string;
+  imagenes?: string[];
 };
 
 export default function Editar() {
@@ -35,6 +39,8 @@ export default function Editar() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [allowed, setAllowed] = useState(true);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const getPost = useCallback(async () => {
     try {
@@ -59,6 +65,8 @@ export default function Editar() {
         descripcion: data.descripcion || "",
         status: data.status || "active",
         userId: data.userId,
+        imagen: data.imagen,
+        imagenes: data.imagenes,
       });
     } catch (error) {
       console.error("Error cargando publicación:", error);
@@ -106,6 +114,41 @@ export default function Editar() {
       toast.error("Error al actualizar");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function eliminarPublicacion() {
+    if (!auth.currentUser) {
+      toast.error("Inicia sesión para eliminar esta publicación");
+      return;
+    }
+
+    if (form.userId && form.userId !== auth.currentUser.uid) {
+      toast.error("Solo puedes eliminar tus propias publicaciones");
+      setDeleteOpen(false);
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await deletePostWithCleanup({
+        db,
+        storage,
+        post: {
+          id: postId,
+          userId: form.userId,
+          imagen: form.imagen,
+          imagenes: form.imagenes,
+        },
+      });
+
+      toast.success("Publicación eliminada correctamente");
+      window.location.href = "/perfil";
+    } catch (error) {
+      console.error("Error eliminando publicación:", error);
+      toast.error("No se pudo eliminar la publicación");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -186,9 +229,22 @@ export default function Editar() {
               <Link href="/perfil" style={{ textDecoration: "none" }}>
                 <button type="button" style={secondaryButton}>Cancelar</button>
               </Link>
+              <button type="button" onClick={() => setDeleteOpen(true)} style={dangerButton}>
+                Eliminar publicación
+              </button>
             </div>
           </div>
         </section>
+
+        <DeletePostDialog
+          open={deleteOpen}
+          title={form.titulo}
+          loading={deleting}
+          onCancel={() => {
+            if (!deleting) setDeleteOpen(false);
+          }}
+          onConfirm={eliminarPublicacion}
+        />
 
         <BottomNav />
       </main>
@@ -302,6 +358,12 @@ const secondaryButton: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.12)",
   background: "rgba(255,255,255,0.06)",
   color: "white",
+};
+
+const dangerButton: React.CSSProperties = {
+  ...secondaryButton,
+  border: "1px solid rgba(255,77,77,0.26)",
+  color: "#ff9b95",
 };
 
 const emptyCard: React.CSSProperties = {
