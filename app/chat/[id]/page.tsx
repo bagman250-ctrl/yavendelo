@@ -225,9 +225,9 @@ export default function ChatPage() {
     <>
       <TopBar />
 
-      <main className="fade-in" style={pageStyle}>
-        <section style={chatShell}>
-          <header style={headerStyle}>
+      <main className="fade-in chat-page" style={pageStyle}>
+        <section className="chat-shell" style={chatShell}>
+          <header className="chat-header" style={headerStyle}>
             <Link href="/mensajes" className="back-button" style={backButton}>
               Volver
             </Link>
@@ -296,7 +296,7 @@ export default function ChatPage() {
             <div ref={bottomRef} />
           </div>
 
-          <form style={inputContainer} onSubmit={sendMessage}>
+          <form className="chat-input" style={inputContainer} onSubmit={sendMessage}>
             <div style={inputWrap}>
               <input
                 value={text}
@@ -317,9 +317,35 @@ export default function ChatPage() {
         <BottomNav />
         <style jsx>{`
           @media (max-width: 720px) {
+            :global(.chat-page) {
+              padding-top: 18px !important;
+              padding-bottom: calc(132px + env(safe-area-inset-bottom)) !important;
+            }
+
+            .chat-shell {
+              height: calc(100dvh - 252px) !important;
+              min-height: 430px !important;
+            }
+
+            .chat-header {
+              gap: 10px !important;
+              padding: 14px !important;
+            }
+
             .back-button {
               width: 100% !important;
               order: -2;
+            }
+
+            .chat-input {
+              align-items: stretch !important;
+              flex-direction: column !important;
+              padding: 12px !important;
+            }
+
+            .chat-input button {
+              min-height: 46px !important;
+              width: 100% !important;
             }
           }
         `}</style>

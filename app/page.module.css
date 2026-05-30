@@ -98,6 +98,11 @@
   font-size: 16px;
 }
 
+.heroSearchRow input:focus {
+  border-color: rgba(255, 123, 0, 0.7);
+  box-shadow: 0 0 0 4px rgba(255, 123, 0, 0.1);
+}
+
 .heroSearchCard p {
   margin: 12px 0 0;
   color: #ffd2a3;
@@ -605,6 +610,16 @@
 .productCard:hover .viewCta {
   border-color: rgba(255, 123, 0, 0.42);
   background: rgba(255, 123, 0, 0.16);
+}
+
+@media (hover: none) {
+  .productCard:hover {
+    transform: none;
+  }
+
+  .productCard:hover .productMedia img {
+    transform: none;
+  }
 }
 
 .favoriteButton,
