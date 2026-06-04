@@ -396,7 +396,7 @@ export default function AdminPage() {
 
       toast.success(status === "reviewed" ? "Feedback marcado como revisado" : "Feedback resuelto");
     } catch (error) {
-      console.error("Error actualizando feedback beta:", error);
+      console.error("Error actualizando feedback:", error);
       toast.error("No se pudo actualizar el feedback");
     }
   }
@@ -500,7 +500,7 @@ export default function AdminPage() {
             <MetricCard label="Usuarios" value={users.length} detail="Registros cargados" />
             <MetricCard label="Reportes pendientes" value={pendingReports.length} detail={`${resolvedReports.length} resueltos`} />
             <MetricCard label="Soporte abierto" value={openSupport.length} detail={`${supportMessages.length} mensajes`} />
-            <MetricCard label="Feedback beta" value={unresolvedBetaFeedback.length} detail={`${betaFeedback.length} reportes`} />
+            <MetricCard label="Feedback usuarios" value={unresolvedBetaFeedback.length} detail={`${betaFeedback.length} reportes`} />
             <MetricCard label="Vistas" value={totalViews} detail={`${totalLikes} guardados/likes`} />
           </section>
 
@@ -552,14 +552,14 @@ export default function AdminPage() {
           <section style={panelStyle}>
             <div style={sectionHeader}>
               <div>
-                <h2 style={sectionTitle}>Feedback beta</h2>
-                <p style={sectionSubtitle}>Reportes enviados por testers desde la beta cerrada.</p>
+                <h2 style={sectionTitle}>Feedback usuarios</h2>
+                <p style={sectionSubtitle}>Reportes enviados por usuarios desde ayuda y contacto.</p>
               </div>
               <span style={smallBadge}>{unresolvedBetaFeedback.length} pendientes</span>
             </div>
 
             {betaFeedback.length === 0 ? (
-              <EmptyState text="Aún no hay feedback beta." />
+              <EmptyState text="Aún no hay feedback de usuarios." />
             ) : (
               <div style={listStack}>
                 {[...betaFeedback]
@@ -576,7 +576,7 @@ export default function AdminPage() {
                       </div>
                       <p style={reportMeta}>{feedback.page || "Sin página"}</p>
                       <p style={reportMeta}>
-                        {feedback.name || "Tester"} · {feedback.email || "Sin correo"}
+                        {feedback.name || "Usuario"} · {feedback.email || "Sin correo"}
                       </p>
                       <p style={reportText}>{feedback.description || feedback.message || "Sin descripción"}</p>
                       <p style={dateText}>{formatAdminDate(feedback.createdAt)}</p>
@@ -835,7 +835,7 @@ function AdminPostCard({
 function EmptyState({ text }: { text: string }) {
   return (
     <div style={emptyState}>
-      <span style={emptyStateBadge}>Beta ops</span>
+      <span style={emptyStateBadge}>Operación</span>
       <strong style={emptyStateTitle}>{text}</strong>
       <p style={emptyStateText}>Cuando haya actividad nueva, aparecerá aquí con acciones claras para revisarla.</p>
     </div>

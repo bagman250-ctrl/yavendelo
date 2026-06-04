@@ -5,6 +5,7 @@ import { marketplaceCategories } from "@/lib/categories";
 const publicRoutes = [
   { path: "", priority: 1, changeFrequency: "daily" as const },
   { path: "/publicar", priority: 0.8, changeFrequency: "weekly" as const },
+  { path: "/ayuda", priority: 0.6, changeFrequency: "monthly" as const },
   { path: "/contacto", priority: 0.6, changeFrequency: "monthly" as const },
   { path: "/privacy", priority: 0.4, changeFrequency: "yearly" as const },
   { path: "/terms", priority: 0.4, changeFrequency: "yearly" as const },
@@ -16,7 +17,7 @@ const publicRoutes = [
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://yavendelo.com";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://yavendeloapp.com";
 
   return publicRoutes.map((route) => ({
     url: `${baseUrl}${route.path}`,

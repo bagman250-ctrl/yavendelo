@@ -102,7 +102,7 @@ export default function LoginPage() {
 
       <main className="fade-in" style={pageStyle}>
         <section style={cardStyle}>
-          <div style={badgeStyle}>Beta privada</div>
+          <div style={badgeStyle}>Marketplace local</div>
 
           <h1 style={titleStyle}>Inicia sesión.</h1>
 

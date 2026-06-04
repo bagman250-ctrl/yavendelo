@@ -23,7 +23,7 @@ export default function Head() {
 
       <link
         rel="apple-touch-icon"
-        href="/icon-192.png"
+        href="/apple-icon.png"
       />
     </>
   );

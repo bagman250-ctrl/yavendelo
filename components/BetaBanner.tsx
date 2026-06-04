@@ -8,10 +8,10 @@ export default function BetaBanner() {
   return (
     <div style={bannerStyle}>
       <div style={innerStyle}>
-        <span style={pillStyle}>Beta cerrada</span>
-        <span style={copyStyle}>Estás usando una versión beta. Algunas funciones pueden cambiar.</span>
-        <Link href="/beta" style={linkStyle}>Guía tester</Link>
-        <Link href="/beta#feedback" style={linkStyle}>Reportar problema</Link>
+        <span style={pillStyle}>Marketplace local</span>
+        <span style={copyStyle}>Compra y vende cerca de ti con publicaciones gratis y chat directo.</span>
+        <Link href="/ayuda" style={linkStyle}>Ayuda</Link>
+        <Link href="/ayuda#feedback" style={linkStyle}>Reportar problema</Link>
         <InstallPrompt />
       </div>
     </div>

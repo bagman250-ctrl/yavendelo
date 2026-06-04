@@ -297,7 +297,7 @@ export default function Home() {
           productId: product.id,
           productTitle: product.titulo || "tu producto",
           title: "Nuevo favorito",
-          message: `${actorName} agregó tu producto a favoritos.`,
+          message: `${actorName} guardó tu producto en favoritos.`,
           type: "favorite",
           read: false,
           link: `/producto/${product.id}`,
@@ -319,7 +319,7 @@ export default function Home() {
       <main className={styles.page}>
         <section className={styles.hero}>
           <div className={styles.heroContent}>
-            <p className={styles.eyebrow}>Beta cerrada · Marketplace local en México</p>
+            <p className={styles.eyebrow}>Marketplace local en México</p>
             <h1>Vende rápido. Compra cerca. Habla directo.</h1>
             <p className={styles.heroCopy}>
               YaVendelo es un marketplace mobile-first para publicar productos reales,
@@ -349,7 +349,7 @@ export default function Home() {
                   Buscar ofertas
                 </button>
               </form>
-              <p>Tip beta: no compartas códigos ni anticipos. Revisa el producto antes de pagar.</p>
+              <p>Tip seguro: no compartas códigos ni anticipos. Revisa el producto antes de pagar.</p>
             </div>
 
             <div className={styles.heroActions}>
@@ -370,8 +370,8 @@ export default function Home() {
             </div>
 
             <div className={styles.trustGrid} aria-label="Beneficios de YaVendelo">
-              <Link href="/beta" className={styles.betaChip}>
-                Beta cerrada
+              <Link href="/ayuda" className={styles.betaChip}>
+                Ayuda y feedback
               </Link>
               <span>Publicación en minutos</span>
               <span>Chat directo</span>
@@ -417,8 +417,8 @@ export default function Home() {
             <span>Mantén acuerdos y dudas en la conversación del producto.</span>
           </article>
           <article>
-            <strong>Beta cerrada</strong>
-            <span>Tu feedback ayuda a preparar una versión pública más estable.</span>
+            <strong>Comunidad local</strong>
+            <span>Tu feedback ayuda a mejorar una plataforma hecha para comprar y vender cerca de ti.</span>
           </article>
         </section>
 
@@ -677,11 +677,11 @@ export default function Home() {
 
         <section className={styles.betaCta}>
           <div>
-            <p className={styles.sectionLabel}>Beta cerrada</p>
+            <p className={styles.sectionLabel}>Ayuda y feedback</p>
             <h2>¿Encontraste algo raro?</h2>
             <p>Reporta errores visuales, flujos confusos o cualquier cosa que te haga dudar.</p>
           </div>
-          <Link href="/beta#feedback" className={styles.secondaryButton}>
+          <Link href="/ayuda#feedback" className={styles.secondaryButton}>
             Reportar problema
           </Link>
         </section>
@@ -705,7 +705,7 @@ export default function Home() {
           <div>
             <Link href="/terms">Términos</Link>
             <Link href="/privacy">Privacidad</Link>
-            <Link href="/beta">Beta</Link>
+            <Link href="/ayuda">Ayuda</Link>
             <Link href="/contacto">Contacto</Link>
           </div>
         </footer>

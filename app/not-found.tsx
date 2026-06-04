@@ -13,7 +13,7 @@ export default function NotFound() {
           <span style={eyebrow}>404</span>
           <h1 style={titleStyle}>Pagina no encontrada</h1>
           <p style={textStyle}>
-            La publicacion o seccion que buscas ya no esta disponible. Si llegaste desde una prueba beta, reportalo.
+            La publicacion o seccion que buscas ya no esta disponible. Puedes volver al catalogo o reportarlo.
           </p>
           <div style={actionsStyle}>
             <Link href="/" style={{ textDecoration: "none" }}>
@@ -21,7 +21,7 @@ export default function NotFound() {
                 Volver al catalogo
               </button>
             </Link>
-            <Link href="/beta#feedback" style={{ textDecoration: "none" }}>
+            <Link href="/ayuda#feedback" style={{ textDecoration: "none" }}>
               <button type="button" style={secondaryButton}>
                 Reportar problema
               </button>

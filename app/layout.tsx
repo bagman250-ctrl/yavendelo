@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: "%s | YaVendelo",
   },
   description:
-    "Marketplace moderno para comprar y vender productos cerca de ti con chat directo, publicaciones premium y experiencia mobile-first.",
+    "Compra y vende productos cerca de ti en YaVendelo, el marketplace local en Mexico con publicaciones gratis, chat directo y vendedores reales.",
   keywords: [
     "marketplace",
     "comprar",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     "vender productos usados",
   ],
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://yavendelo.com"
+    process.env.NEXT_PUBLIC_SITE_URL || "https://yavendeloapp.com"
   ),
   alternates: {
     canonical: "/",
@@ -37,8 +37,8 @@ export const metadata: Metadata = {
   openGraph: {
     title: "YaVendelo | Marketplace local en Mexico",
     description:
-      "Compra y vende productos cerca de ti con una experiencia rapida, premium y mobile-first.",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://yavendelo.com",
+      "Compra y vende cerca de ti con publicaciones gratis, productos reales y chat directo.",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://yavendeloapp.com",
     siteName: "YaVendelo",
     locale: "es_MX",
     type: "website",
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "YaVendelo | Marketplace local en Mexico",
-    description: "Compra y vende productos cerca de ti con chat directo y publicaciones premium.",
+    description: "Compra y vende productos cerca de ti con publicaciones gratis y chat directo.",
     images: ["/og-image.png"],
   },
 };

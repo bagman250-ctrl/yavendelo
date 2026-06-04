@@ -133,7 +133,7 @@ export default function RegisterPage() {
 
       <main className="fade-in" style={pageStyle}>
         <section style={cardStyle}>
-          <div style={badgeStyle}>Beta privada</div>
+          <div style={badgeStyle}>Publica gratis</div>
 
           <h1 style={titleStyle}>Únete a YaVendelo.</h1>
 

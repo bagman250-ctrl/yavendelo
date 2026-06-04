@@ -26,7 +26,7 @@ export default function ErrorPage({
           <span style={eyebrow}>Error</span>
           <h1 style={titleStyle}>Algo no cargo correctamente</h1>
           <p style={textStyle}>
-            Estás usando una versión beta. Puedes reintentar, volver al catálogo o reportar el problema para revisarlo.
+            Puedes reintentar, volver al catalogo o reportar el problema para que lo revisemos.
           </p>
 
           <div style={actionsStyle}>
@@ -38,7 +38,7 @@ export default function ErrorPage({
                 Ir al inicio
               </button>
             </Link>
-            <Link href="/beta#feedback" style={{ textDecoration: "none" }}>
+            <Link href="/ayuda#feedback" style={{ textDecoration: "none" }}>
               <button type="button" style={secondaryButton}>
                 Reportar problema
               </button>

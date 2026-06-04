@@ -23,7 +23,7 @@ export function trackEvent(eventName: string, params: AnalyticsParams = {}) {
   try {
     window.gtag("event", eventName, {
       app_name: "YaVendelo",
-      environment: process.env.NEXT_PUBLIC_BETA_MODE === "true" ? "closed_beta" : "production",
+      environment: "production",
       ...cleanAnalyticsParams(params),
     });
 
@@ -45,9 +45,9 @@ export const analyticsEvents = {
   favoriteProduct: "favorite_product",
   publishProduct: "publish_product",
   startChat: "start_chat",
-  betaFeedbackSubmit: "beta_feedback_submit",
+  betaFeedbackSubmit: "feedback_submit",
   boostClick: "boost_click",
-  betaPageView: "beta_page_view",
+  betaPageView: "help_page_view",
   removeFavoriteProduct: "remove_favorite_product",
   boostSuccess: "boost_success",
   loginGoogle: "login_google",

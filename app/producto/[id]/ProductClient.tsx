@@ -208,7 +208,7 @@ export default function ProductClient({ productId }: { productId: string }) {
           productId: product.id,
           productTitle: product.titulo || "tu producto",
           title: "Nuevo favorito",
-          message: `${actorName} agregó tu producto a favoritos.`,
+          message: `${actorName} guardó tu producto en favoritos.`,
           type: "favorite",
           read: false,
           link: `/producto/${product.id}`,
@@ -276,7 +276,7 @@ export default function ProductClient({ productId }: { productId: string }) {
       priceCurrency: "MXN",
       price: Number(product.precio || 0),
       availability: isSold ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
-      url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://yavendelo.com"}/producto/${product.id}`,
+      url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://yavendeloapp.com"}/producto/${product.id}`,
     },
   };
 
@@ -400,13 +400,13 @@ export default function ProductClient({ productId }: { productId: string }) {
                 />
                 <div>
                   <h3 style={sellerName}>{product.userName || "Usuario"}</h3>
-                  <p style={sellerEmail}>{product.userEmail || "Sin correo visible"}</p>
+                  <p style={sellerEmail}>Identidad visible por nombre y foto</p>
                 </div>
               </div>
               <div style={sellerBadges}>
                 <span style={sellerBadge}>Chat directo</span>
                 <span style={sellerBadge}>Perfil visible</span>
-                <span style={sellerBadge}>Beta</span>
+                <span style={sellerBadge}>Marketplace local</span>
               </div>
 
               {product.userEmail && (

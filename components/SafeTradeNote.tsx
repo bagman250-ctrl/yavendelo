@@ -9,7 +9,7 @@ export default function SafeTradeNote({
 }: SafeTradeNoteProps) {
   return (
     <aside style={compact ? compactStyle : noteStyle} aria-label="Consejos de seguridad">
-      <span style={badgeStyle}>Beta segura</span>
+      <span style={badgeStyle}>Compra segura</span>
       <strong style={titleStyle}>{title}</strong>
       <p style={textStyle}>
         No compartas codigos, contrasenas ni anticipos fuera del chat. Revisa el producto y acuerda

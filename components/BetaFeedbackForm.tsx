@@ -43,15 +43,15 @@ export default function BetaFeedbackForm({ defaultPage = "", compact = false }: 
       setSending(true);
 
       await addDoc(collection(db, "betaFeedback"), {
-        name: name.trim() || auth.currentUser?.displayName || "Tester beta",
-        email: email.trim() || auth.currentUser?.email || "beta@yavendelo.local",
+        name: name.trim() || auth.currentUser?.displayName || "Usuario YaVendelo",
+        email: email.trim() || auth.currentUser?.email || "sin-correo@yavendeloapp.com",
         description: cleanMessage,
         message: cleanMessage,
         page: page.trim() || "No especificada",
         priority,
         status: "pending",
         userId: auth.currentUser?.uid || null,
-        source: "closed_beta",
+        source: "public_feedback",
         createdAt: serverTimestamp(),
       });
 
@@ -60,9 +60,9 @@ export default function BetaFeedbackForm({ defaultPage = "", compact = false }: 
         priority,
       });
       setMessage("");
-      toast.success("Gracias por reportarlo. Lo revisaremos para la beta.");
+      toast.success("Gracias por reportarlo. Lo revisaremos pronto.");
     } catch (error) {
-      console.error("Error enviando feedback beta:", error);
+      console.error("Error enviando feedback:", error);
       toast.error("No se pudo enviar el reporte");
     } finally {
       setSending(false);
@@ -116,7 +116,7 @@ export default function BetaFeedbackForm({ defaultPage = "", compact = false }: 
       </label>
 
       <button type="submit" disabled={sending} style={{ ...buttonStyle, opacity: sending ? 0.7 : 1 }}>
-        {sending ? "Enviando..." : "Enviar reporte beta"}
+        {sending ? "Enviando..." : "Enviar reporte"}
       </button>
     </form>
   );

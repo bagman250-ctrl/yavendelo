@@ -126,7 +126,7 @@ export default function NotificacionesPage() {
             <div>
               <span style={eyebrow}>Centro de actividad</span>
               <h1 style={titleStyle}>Notificaciones</h1>
-              <p style={subtitleStyle}>Mensajes, favoritos, reportes y avisos importantes de tu cuenta beta.</p>
+              <p style={subtitleStyle}>Mensajes, favoritos, reportes y avisos importantes de tu cuenta.</p>
             </div>
 
             {user && unreadCount > 0 && (

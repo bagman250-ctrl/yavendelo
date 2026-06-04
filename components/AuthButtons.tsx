@@ -68,7 +68,7 @@ export default function AuthButtons() {
           <Link href="/perfil" style={menuLink}>Mi perfil</Link>
           <Link href="/mensajes" style={menuLink}>Mensajes</Link>
           <Link href="/favoritos" style={menuLink}>Favoritos</Link>
-          <Link href="/beta" style={menuLink}>Beta cerrada</Link>
+          <Link href="/ayuda" style={menuLink}>Ayuda y feedback</Link>
           <Link href="/publicar" style={menuPrimary}>Publicar producto</Link>
         </div>
       )}

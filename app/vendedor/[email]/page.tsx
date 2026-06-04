@@ -250,7 +250,7 @@ export default function VendedorPage() {
             <div style={{ flex: 1 }}>
               <span style={eyebrow}>Perfil vendedor</span>
               <h1 style={titleStyle}>{sellerName}</h1>
-              <p style={emailStyle}>{email}</p>
+              <p style={emailStyle}>Vendedor verificado por actividad en YaVendelo</p>
               <div style={sellerBadges}>
                 <span>Miembro desde {memberSince}</span>
                 <span>Ultima publicacion {latestPost}</span>

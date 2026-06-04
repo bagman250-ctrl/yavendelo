@@ -111,7 +111,7 @@ export default function ProductCard({ product }: { product: Product }) {
           productId: product.id,
           productTitle: product.titulo || "tu producto",
           title: "Nuevo favorito",
-          message: `${actorName} agregó tu producto a favoritos.`,
+          message: `${actorName} guardó tu producto en favoritos.`,
           type: "favorite",
           read: false,
           link: `/producto/${product.id}`,

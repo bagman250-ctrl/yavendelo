@@ -167,11 +167,11 @@ Recomendación: agrega medidas, accesorios incluidos, detalles de uso y cualquie
         <div style={containerStyle}>
           <section style={heroSection}>
             <div>
-              <div style={heroBadge}>Beta · Publicacion guiada</div>
+              <div style={heroBadge}>Publicacion gratis</div>
               <h1 style={heroTitle}>Vende con una publicación clara y confiable.</h1>
               <p style={heroText}>
-                Sube buenas fotos, define precio y describe el producto con detalle. Una publicación completa
-                recibe más mensajes y evita dudas repetidas.
+                Sube buenas fotos, define precio y describe el producto con detalle. Mientras más clara sea tu
+                publicación, más rápido puedes vender y evitar dudas repetidas.
               </p>
             </div>
 

@@ -9,11 +9,10 @@ import TopBar from "@/components/TopBar";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
 
 const checklist = [
-  "Crear cuenta con email y contraseña",
-  "Iniciar sesión con Google",
+  "Crear cuenta o iniciar sesión con Google",
   "Completar nombre y subir foto en perfil",
   "Publicar un producto con imágenes reales",
-  "Guardar un producto en favoritos",
+  "Guardar productos en favoritos",
   "Iniciar un chat desde una publicación",
   "Revisar mensajes y notificaciones",
   "Abrir el perfil público de un vendedor",
@@ -22,7 +21,9 @@ const checklist = [
 
 export default function BetaPage() {
   useEffect(() => {
-    trackEvent(analyticsEvents.betaPageView, { page: "/beta" });
+    trackEvent(analyticsEvents.betaPageView, {
+      page: typeof window !== "undefined" ? window.location.pathname : "/ayuda",
+    });
   }, []);
 
   return (
@@ -32,15 +33,15 @@ export default function BetaPage() {
       <main style={pageStyle}>
         <section style={containerStyle}>
           <section style={heroCard}>
-            <span style={badgeStyle}>Beta cerrada</span>
-            <h1 style={titleStyle}>Gracias por probar YaVendelo.</h1>
+            <span style={badgeStyle}>Ayuda y feedback</span>
+            <h1 style={titleStyle}>Usa YaVendelo con confianza.</h1>
             <p style={textStyle}>
-              Estás usando una versión beta. Algunas funciones pueden cambiar. Tu feedback nos ayuda a preparar
-              una beta pública más estable, rápida y confiable.
+              Encuentra productos reales cerca de ti, publica gratis y usa el chat para acordar detalles con claridad.
+              Si algo falla o se siente confuso, cuéntanos para mejorarlo.
             </p>
             <div style={actionsStyle}>
               <Link href="/" style={{ textDecoration: "none" }}>
-                <button type="button" style={primaryButton}>Probar marketplace</button>
+                <button type="button" style={primaryButton}>Ir al marketplace</button>
               </Link>
               <a href="#feedback" style={secondaryLink}>Reportar problema</a>
             </div>
@@ -48,8 +49,8 @@ export default function BetaPage() {
 
           <section className="beta-grid" style={gridStyle}>
             <article style={panelStyle}>
-              <span style={badgeStyle}>Checklist tester</span>
-              <h2 style={sectionTitle}>Qué probar esta semana</h2>
+              <span style={badgeStyle}>Guía rápida</span>
+              <h2 style={sectionTitle}>Qué puedes hacer en YaVendelo</h2>
               <div style={checklistStyle}>
                 {checklist.map((item, index) => (
                   <div key={item} style={checkItem}>
@@ -72,7 +73,7 @@ export default function BetaPage() {
           </section>
 
           <section id="feedback" style={feedbackWrap}>
-            <BetaFeedbackForm defaultPage="/beta" />
+            <BetaFeedbackForm />
           </section>
         </section>
 
