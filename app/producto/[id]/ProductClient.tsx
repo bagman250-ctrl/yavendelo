@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, increment, limit, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, increment, limit, query, serverTimestamp, updateDoc, where, type Query } from "firebase/firestore";
 
 import { auth, db } from "../../firebase/config";
 import BottomNav from "../../../components/BottomNav";
@@ -33,6 +33,7 @@ type Product = {
   userEmail?: string;
   userPhotoURL?: string;
   views?: number;
+  createdAt?: { seconds?: number } | number | string;
 };
 
 function formatPrice(value?: number | string) {
@@ -43,6 +44,38 @@ function formatPrice(value?: number | string) {
   }).format(Number(value || 0));
 }
 
+function getDateValue(value?: Product["createdAt"]) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") return Number(value) || 0;
+  return Number(value?.seconds || 0);
+}
+
+function formatPublishedAge(value?: Product["createdAt"]) {
+  const raw = getDateValue(value);
+  if (!raw) return "Publicado recientemente";
+
+  const millis = raw < 10000000000 ? raw * 1000 : raw;
+  const diffDays = Math.max(0, Math.floor((Date.now() - millis) / 86400000));
+
+  if (diffDays === 0) return "Publicado hoy";
+  if (diffDays === 1) return "Publicado ayer";
+  if (diffDays < 30) return `Publicado hace ${diffDays} días`;
+
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(millis));
+}
+
+function isRecentlyPublished(value?: Product["createdAt"]) {
+  const raw = getDateValue(value);
+  if (!raw) return true;
+
+  const millis = raw < 10000000000 ? raw * 1000 : raw;
+  return Date.now() - millis < 7 * 86400000;
+}
+
 export default function ProductClient({ productId }: { productId: string }) {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,6 +83,7 @@ export default function ProductClient({ productId }: { productId: string }) {
   const [favoriteId, setFavoriteId] = useState("");
   const [activeImage, setActiveImage] = useState(0);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [sellerPostCount, setSellerPostCount] = useState(0);
 
   const loadProduct = useCallback(async () => {
     if (!productId) return;
@@ -65,19 +99,40 @@ export default function ProductClient({ productId }: { productId: string }) {
       const data = { id: snapshot.id, ...snapshot.data() } as Product;
       setProduct(data);
 
+      const relatedQueries: Query[] = [];
+
       if (data.categoria) {
-        const relatedQuery = query(
-          collection(db, "posts"),
-          where("categoria", "==", data.categoria),
-          limit(6)
-        );
-        const relatedSnapshot = await getDocs(relatedQuery);
-        setRelatedProducts(
-          relatedSnapshot.docs
-            .map((document) => ({ id: document.id, ...document.data() }) as Product)
-            .filter((item) => item.id !== data.id)
-            .filter((item) => (item.status || "active") === "active")
-            .slice(0, 3)
+        relatedQueries.push(query(collection(db, "posts"), where("categoria", "==", data.categoria), limit(12)));
+      }
+
+      if (data.ciudad) {
+        relatedQueries.push(query(collection(db, "posts"), where("ciudad", "==", data.ciudad), limit(12)));
+      }
+
+      const relatedResults = await Promise.allSettled(relatedQueries.map((relatedQuery) => getDocs(relatedQuery)));
+      const relatedMap = new Map<string, Product>();
+
+      relatedResults.forEach((result) => {
+        if (result.status !== "fulfilled") return;
+
+        result.value.docs.forEach((document) => {
+          const item = { id: document.id, ...document.data() } as Product;
+          if (item.id !== data.id && (item.status || "active") === "active") {
+            relatedMap.set(item.id, item);
+          }
+        });
+      });
+
+      setRelatedProducts(Array.from(relatedMap.values()).slice(0, 8));
+
+      if (data.userId) {
+        const sellerPostsQuery = query(collection(db, "posts"), where("userId", "==", data.userId), limit(40));
+        const sellerPostsSnapshot = await getDocs(sellerPostsQuery);
+        setSellerPostCount(
+          sellerPostsSnapshot.docs.filter((document) => {
+            const item = document.data() as Product;
+            return (item.status || "active") === "active";
+          }).length
         );
       }
 
@@ -264,6 +319,8 @@ export default function ProductClient({ productId }: { productId: string }) {
 
   const selectedImage = images[activeImage] || "/placeholder.png";
   const isSold = product.status === "sold";
+  const publishedAge = formatPublishedAge(product.createdAt);
+  const recentlyPublished = isRecentlyPublished(product.createdAt);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -290,14 +347,20 @@ export default function ProductClient({ productId }: { productId: string }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <div className="product-layout" style={containerStyle}>
-          <section style={galleryCard}>
-            <div style={mainImageWrap}>
-              {product.featured && <span style={premiumBadge}>Premium</span>}
+          <section className="gallery-card" style={galleryCard}>
+            <div className="main-image-wrap" style={mainImageWrap}>
+              <div style={galleryOverlayTop}>
+                {product.featured && <span style={premiumBadge}>Destacado</span>}
+                <span style={imageCounter}>
+                  {activeImage + 1} / {Math.max(images.length, 1)}
+                </span>
+              </div>
               <img
                 src={selectedImage}
                 alt={product.titulo || "Producto"}
                 style={productImage}
                 decoding="async"
+                loading="eager"
               />
 
               {images.length > 1 && (
@@ -308,15 +371,12 @@ export default function ProductClient({ productId }: { productId: string }) {
                   <button type="button" onClick={nextImage} style={rightArrow} aria-label="Siguiente imagen">
                     ›
                   </button>
-                  <span style={imageCounter}>
-                    {activeImage + 1} / {images.length}
-                  </span>
                 </>
               )}
             </div>
 
             {images.length > 1 && (
-              <div style={thumbsGrid}>
+              <div className="thumbs-row" style={thumbsGrid}>
                 {images.map((image, index) => (
                   <button
                     key={image}
@@ -336,16 +396,22 @@ export default function ProductClient({ productId }: { productId: string }) {
             )}
           </section>
 
-          <section style={detailsColumn}>
+          <section style={summaryCard}>
             <div style={badgesRow}>
+              <span style={isSold ? soldBadge : availableBadge}>{isSold ? "Vendido" : "Disponible"}</span>
+              {recentlyPublished && <span style={newBadge}>Publicado recientemente</span>}
               <span style={categoryBadge}>{product.categoria || "Producto"}</span>
               {product.featured && <span style={premiumSmallBadge}>Destacado</span>}
-              {isSold && <span style={soldBadge}>Vendido</span>}
             </div>
 
             <h1 style={productTitle}>{product.titulo || "Producto disponible"}</h1>
             <p style={priceStyle}>{formatPrice(product.precio)}</p>
-            <p style={cityStyle}>{product.ciudad || "México"}</p>
+            <div style={locationRow}>
+              <span aria-hidden="true">📍</span>
+              <p style={cityStyle}>{product.ciudad || "México"}</p>
+              <span style={dotStyle}>•</span>
+              <p style={publishedStyle}>{publishedAge}</p>
+            </div>
 
             <div style={statsRow}>
               <StatPill label="Vistas" value={Number(product.views || 0).toLocaleString("es-MX")} />
@@ -363,13 +429,16 @@ export default function ProductClient({ productId }: { productId: string }) {
 
             <div className="product-actions" style={actionsRow}>
               {!isSold && (
-                <StartChatButton
-                  productId={product.id}
-                  productTitle={product.titulo}
-                  sellerId={product.userId}
-                  sellerName={product.userName}
-                  sellerPhotoURL={product.userPhotoURL}
-                />
+                <div style={primaryActionWrap}>
+                  <StartChatButton
+                    productId={product.id}
+                    productTitle={product.titulo}
+                    sellerId={product.userId}
+                    sellerName={product.userName}
+                    sellerPhotoURL={product.userPhotoURL}
+                    productImage={selectedImage}
+                  />
+                </div>
               )}
 
               <button type="button" onClick={toggleFavorite} style={liked ? dangerButton : secondaryButton}>
@@ -383,24 +452,29 @@ export default function ProductClient({ productId }: { productId: string }) {
               <ReportButton product={product} />
             </div>
 
-            <article style={cardStyle}>
-              <h2 style={sectionTitle}>Descripción</h2>
-              <p style={descriptionStyle}>{product.descripcion || "Sin descripción disponible."}</p>
-            </article>
-
             <article style={sellerCard}>
-              <span style={sellerLabel}>Vendedor</span>
+              <div style={cardHeader}>
+                <div>
+                  <span style={sellerLabel}>Información del vendedor</span>
+                  <h2 style={sectionTitle}>Vendedor</h2>
+                </div>
+                <span style={sellerBadge}>Miembro YaVendelo</span>
+              </div>
               <div style={sellerIdentity}>
                 <UserAvatar
                   name={product.userName}
                   email={product.userEmail}
                   photoURL={product.userPhotoURL}
-                  size={54}
+                  size={68}
                   label="Avatar del vendedor"
                 />
                 <div>
                   <h3 style={sellerName}>{product.userName || "Usuario"}</h3>
-                  <p style={sellerEmail}>Identidad visible por nombre y foto</p>
+                  <p style={sellerEmail}>
+                    {sellerPostCount > 0
+                      ? `${sellerPostCount} publicaciones activas`
+                      : "Vendedor con actividad en YaVendelo"}
+                  </p>
                 </div>
               </div>
               <div style={sellerBadges}>
@@ -417,6 +491,11 @@ export default function ProductClient({ productId }: { productId: string }) {
                 </Link>
               )}
             </article>
+
+            <article style={descriptionCard}>
+              <h2 style={sectionTitle}>Descripción</h2>
+              <p style={descriptionStyle}>{product.descripcion || "Sin descripción disponible."}</p>
+            </article>
           </section>
         </div>
 
@@ -424,11 +503,11 @@ export default function ProductClient({ productId }: { productId: string }) {
           <section style={relatedSection}>
             <div style={relatedHeader}>
               <div>
-                <span style={sellerLabel}>Relacionados</span>
-                <h2 style={sectionTitle}>Mas productos en {product.categoria}</h2>
+                <span style={sellerLabel}>Productos similares</span>
+                <h2 style={sectionTitle}>También te puede interesar</h2>
               </div>
               <Link href={getCategoryHref(product.categoria || "")} style={{ textDecoration: "none" }}>
-                <button type="button" style={secondaryButton}>Ver categoria</button>
+                <button type="button" style={secondaryButton}>Ver categoría</button>
               </Link>
             </div>
             <div style={relatedGrid}>
@@ -454,15 +533,38 @@ export default function ProductClient({ productId }: { productId: string }) {
         <BottomNav />
 
         <style jsx>{`
+          .gallery-card:hover .main-image-wrap :global(img) {
+            transform: scale(1.025);
+            filter: saturate(1.04);
+          }
+
+          .thumbs-row :global(button:hover) {
+            transform: translateY(-2px);
+            border-color: rgba(255, 123, 0, 0.58) !important;
+          }
+
+          .product-actions :global(button) {
+            min-height: 52px;
+          }
+
+          a:hover :global(img) {
+            transform: scale(1.025);
+          }
+
           @media (max-width: 760px) {
             .product-layout {
               grid-template-columns: 1fr !important;
               gap: 20px !important;
             }
 
+            .main-image-wrap {
+              min-height: 280px !important;
+              aspect-ratio: 1 / 1 !important;
+            }
+
             .product-actions {
               position: sticky;
-              bottom: 92px;
+              bottom: calc(94px + env(safe-area-inset-bottom));
               z-index: 20;
               padding: 10px !important;
               border: 1px solid rgba(255, 255, 255, 0.1);
@@ -474,6 +576,13 @@ export default function ProductClient({ productId }: { productId: string }) {
             .product-actions :global(button),
             .product-actions :global(a) {
               flex: 1 1 140px;
+            }
+          }
+
+          @media (hover: none) {
+            .gallery-card:hover .main-image-wrap :global(img),
+            a:hover :global(img) {
+              transform: none;
             }
           }
         `}</style>
@@ -495,15 +604,15 @@ const pageStyle: React.CSSProperties = {
   minHeight: "100vh",
   background: "linear-gradient(180deg, rgba(255,123,0,0.08), transparent 380px), #070707",
   color: "white",
-  padding: "42px 24px 140px",
+  padding: "34px 24px 150px",
 };
 
 const containerStyle: React.CSSProperties = {
-  maxWidth: "1240px",
+  maxWidth: "1180px",
   margin: "0 auto",
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))",
-  gap: "32px",
+  gridTemplateColumns: "1fr",
+  gap: "20px",
   alignItems: "start",
 };
 
@@ -536,9 +645,21 @@ const galleryCard: React.CSSProperties = {
 const mainImageWrap: React.CSSProperties = {
   position: "relative",
   width: "100%",
-  aspectRatio: "4 / 3",
+  aspectRatio: "16 / 9",
+  minHeight: "420px",
   background: "#101010",
   overflow: "hidden",
+};
+
+const galleryOverlayTop: React.CSSProperties = {
+  position: "absolute",
+  inset: "16px 16px auto 16px",
+  zIndex: 4,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
+  pointerEvents: "none",
 };
 
 const productImage: React.CSSProperties = {
@@ -546,13 +667,10 @@ const productImage: React.CSSProperties = {
   height: "100%",
   objectFit: "cover",
   display: "block",
+  transition: "transform 0.45s ease, filter 0.45s ease",
 };
 
 const premiumBadge: React.CSSProperties = {
-  position: "absolute",
-  top: "16px",
-  left: "16px",
-  zIndex: 3,
   padding: "9px 12px",
   borderRadius: "8px",
   background: "linear-gradient(135deg, #ffb067, #ff7b00)",
@@ -584,10 +702,6 @@ const rightArrow: React.CSSProperties = {
 };
 
 const imageCounter: React.CSSProperties = {
-  position: "absolute",
-  right: "16px",
-  bottom: "16px",
-  zIndex: 3,
   padding: "8px 10px",
   borderRadius: "8px",
   background: "rgba(0,0,0,0.58)",
@@ -596,14 +710,16 @@ const imageCounter: React.CSSProperties = {
 };
 
 const thumbsGrid: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(82px,1fr))",
+  display: "flex",
   gap: "10px",
   padding: "12px",
+  overflowX: "auto",
 };
 
 const thumbButton: React.CSSProperties = {
-  height: "84px",
+  width: "104px",
+  height: "78px",
+  flex: "0 0 auto",
   borderRadius: "8px",
   overflow: "hidden",
   background: "#101010",
@@ -619,9 +735,15 @@ const thumbImage: React.CSSProperties = {
   display: "block",
 };
 
-const detailsColumn: React.CSSProperties = {
+const summaryCard: React.CSSProperties = {
   display: "grid",
   gap: "18px",
+  borderRadius: "8px",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background:
+    "linear-gradient(135deg, rgba(255,123,0,0.08), transparent 36%), linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
+  padding: "26px",
+  boxShadow: "0 24px 70px rgba(0,0,0,0.28)",
 };
 
 const badgesRow: React.CSSProperties = {
@@ -640,6 +762,19 @@ const categoryBadge: React.CSSProperties = {
   fontWeight: "900",
 };
 
+const availableBadge: React.CSSProperties = {
+  ...categoryBadge,
+  background: "rgba(57,217,138,0.14)",
+  border: "1px solid rgba(57,217,138,0.28)",
+  color: "#9cf2c8",
+};
+
+const newBadge: React.CSSProperties = {
+  ...categoryBadge,
+  background: "rgba(255,255,255,0.08)",
+  color: "#ffffff",
+};
+
 const premiumSmallBadge: React.CSSProperties = {
   ...categoryBadge,
   background: "#ff7b00",
@@ -655,7 +790,7 @@ const soldBadge: React.CSSProperties = {
 
 const productTitle: React.CSSProperties = {
   margin: 0,
-  fontSize: "46px",
+  fontSize: "52px",
   lineHeight: 1.05,
   fontWeight: "900",
 };
@@ -663,13 +798,32 @@ const productTitle: React.CSSProperties = {
 const priceStyle: React.CSSProperties = {
   margin: 0,
   color: "#ffb067",
-  fontSize: "42px",
+  fontSize: "58px",
+  lineHeight: 1,
   fontWeight: "900",
+  textShadow: "0 14px 34px rgba(255,123,0,0.18)",
 };
 
 const cityStyle: React.CSSProperties = {
   margin: 0,
   color: "#c7c7c7",
+  fontWeight: "800",
+};
+
+const locationRow: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  flexWrap: "wrap",
+};
+
+const dotStyle: React.CSSProperties = {
+  color: "rgba(255,255,255,0.34)",
+};
+
+const publishedStyle: React.CSSProperties = {
+  margin: 0,
+  color: "#a7a7a7",
   fontWeight: "800",
 };
 
@@ -712,11 +866,28 @@ const actionsRow: React.CSSProperties = {
   gap: "10px",
 };
 
+const primaryActionWrap: React.CSSProperties = {
+  flex: "1 1 100%",
+};
+
 const cardStyle: React.CSSProperties = {
   background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.035))",
   border: "1px solid rgba(255,255,255,0.1)",
   borderRadius: "8px",
   padding: "22px",
+};
+
+const descriptionCard: React.CSSProperties = {
+  ...cardStyle,
+};
+
+const cardHeader: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  gap: "14px",
+  flexWrap: "wrap",
+  marginBottom: "12px",
 };
 
 const sectionTitle: React.CSSProperties = {
@@ -786,6 +957,7 @@ const profileButton: React.CSSProperties = {
   padding: "14px 18px",
   borderRadius: "8px",
   fontWeight: "900",
+  width: "100%",
 };
 
 const secondaryButton: React.CSSProperties = {
@@ -797,6 +969,7 @@ const secondaryButton: React.CSSProperties = {
   borderRadius: "8px",
   fontWeight: "900",
   minHeight: "48px",
+  flex: "1 1 160px",
 };
 
 const dangerButton: React.CSSProperties = {
@@ -806,7 +979,7 @@ const dangerButton: React.CSSProperties = {
 };
 
 const relatedSection: React.CSSProperties = {
-  width: "min(1240px, 100%)",
+  width: "min(1180px, 100%)",
   margin: "26px auto 0",
   border: "1px solid rgba(255,255,255,0.1)",
   background: "linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.028))",
@@ -824,7 +997,7 @@ const relatedHeader: React.CSSProperties = {
 
 const relatedGrid: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+  gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))",
   gap: "14px",
 };
 
@@ -835,13 +1008,15 @@ const relatedCard: React.CSSProperties = {
   borderRadius: "8px",
   color: "white",
   textDecoration: "none",
+  transition: "transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease",
 };
 
 const relatedImage: React.CSSProperties = {
   width: "100%",
-  height: "160px",
+  height: "178px",
   objectFit: "cover",
   display: "block",
+  transition: "transform 0.45s ease",
 };
 
 const relatedBody: React.CSSProperties = {
