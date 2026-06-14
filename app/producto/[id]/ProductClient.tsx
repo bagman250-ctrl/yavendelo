@@ -551,15 +551,22 @@ export default function ProductClient({ productId }: { productId: string }) {
             transform: scale(1.025);
           }
 
-          @media (max-width: 760px) {
+          @media (max-width: 980px) {
             .product-layout {
               grid-template-columns: 1fr !important;
               gap: 20px !important;
             }
 
             .main-image-wrap {
-              min-height: 280px !important;
-              aspect-ratio: 1 / 1 !important;
+              height: clamp(340px, 58vw, 440px) !important;
+              max-height: 440px !important;
+            }
+          }
+
+          @media (max-width: 760px) {
+            .main-image-wrap {
+              height: clamp(300px, 78vw, 380px) !important;
+              max-height: 380px !important;
             }
 
             .product-actions {
@@ -604,15 +611,15 @@ const pageStyle: React.CSSProperties = {
   minHeight: "100vh",
   background: "linear-gradient(180deg, rgba(255,123,0,0.08), transparent 380px), #070707",
   color: "white",
-  padding: "34px 24px 150px",
+  padding: "30px 24px 150px",
 };
 
 const containerStyle: React.CSSProperties = {
-  maxWidth: "1180px",
+  maxWidth: "1240px",
   margin: "0 auto",
   display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "20px",
+  gridTemplateColumns: "minmax(0, 1.08fr) minmax(380px, 0.92fr)",
+  gap: "24px",
   alignItems: "start",
 };
 
@@ -645,8 +652,8 @@ const galleryCard: React.CSSProperties = {
 const mainImageWrap: React.CSSProperties = {
   position: "relative",
   width: "100%",
-  aspectRatio: "16 / 9",
-  minHeight: "420px",
+  height: "clamp(440px, 40vw, 510px)",
+  maxHeight: "520px",
   background: "#101010",
   overflow: "hidden",
 };
@@ -712,13 +719,13 @@ const imageCounter: React.CSSProperties = {
 const thumbsGrid: React.CSSProperties = {
   display: "flex",
   gap: "10px",
-  padding: "12px",
+  padding: "12px 14px 14px",
   overflowX: "auto",
 };
 
 const thumbButton: React.CSSProperties = {
-  width: "104px",
-  height: "78px",
+  width: "92px",
+  height: "68px",
   flex: "0 0 auto",
   borderRadius: "8px",
   overflow: "hidden",
@@ -737,12 +744,12 @@ const thumbImage: React.CSSProperties = {
 
 const summaryCard: React.CSSProperties = {
   display: "grid",
-  gap: "18px",
+  gap: "16px",
   borderRadius: "8px",
   border: "1px solid rgba(255,255,255,0.1)",
   background:
     "linear-gradient(135deg, rgba(255,123,0,0.08), transparent 36%), linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035))",
-  padding: "26px",
+  padding: "24px",
   boxShadow: "0 24px 70px rgba(0,0,0,0.28)",
 };
 
@@ -790,15 +797,15 @@ const soldBadge: React.CSSProperties = {
 
 const productTitle: React.CSSProperties = {
   margin: 0,
-  fontSize: "52px",
-  lineHeight: 1.05,
+  fontSize: "clamp(30px, 3.4vw, 42px)",
+  lineHeight: 1.08,
   fontWeight: "900",
 };
 
 const priceStyle: React.CSSProperties = {
   margin: 0,
   color: "#ffb067",
-  fontSize: "58px",
+  fontSize: "clamp(38px, 4vw, 50px)",
   lineHeight: 1,
   fontWeight: "900",
   textShadow: "0 14px 34px rgba(255,123,0,0.18)",
