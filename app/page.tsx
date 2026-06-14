@@ -320,10 +320,10 @@ export default function Home() {
         <section className={styles.hero}>
           <div className={styles.heroContent}>
             <p className={styles.eyebrow}>Marketplace local en México</p>
-            <h1>Vende rápido. Compra cerca. Habla directo.</h1>
+            <h1>Compra y vende cerca de ti</h1>
             <p className={styles.heroCopy}>
-              YaVendelo es un marketplace mobile-first para publicar productos reales,
-              encontrar ofertas por ciudad y cerrar por chat con más claridad.
+              Publica gratis, encuentra ofertas reales y habla directo por chat.
+              Todo pensado para comprar y vender con más confianza en tu ciudad.
             </p>
 
             <div className={styles.heroSearchCard}>
@@ -332,7 +332,7 @@ export default function Home() {
                 <input
                   id="hero-search"
                   type="search"
-                  placeholder="Busca iPhone, moto, sala o consola..."
+                  placeholder="Busca autos, celulares, muebles, ropa..."
                   value={search}
                   onChange={(event) => {
                     setSearch(event.target.value);
@@ -346,7 +346,7 @@ export default function Home() {
                   }}
                 />
                 <button type="submit" className={styles.primaryButton}>
-                  Buscar ofertas
+                  Buscar
                 </button>
               </form>
               <p>Tip seguro: no compartas códigos ni anticipos. Revisa el producto antes de pagar.</p>
@@ -358,14 +358,14 @@ export default function Home() {
                 className={styles.primaryButton}
                 onClick={() => trackEvent("publish_cta_clicked", { location: "home_hero" })}
               >
-                Publicar producto
+                Publicar gratis
               </Link>
               <a
                 href="#productos"
                 className={styles.secondaryButton}
                 onClick={() => trackEvent("explore_clicked", { location: "home_hero" })}
               >
-                Explorar ofertas
+                Explorar productos
               </a>
             </div>
 
@@ -373,9 +373,9 @@ export default function Home() {
               <Link href="/ayuda" className={styles.betaChip}>
                 Ayuda y feedback
               </Link>
-              <span>Publicación en minutos</span>
+              <span>Publica gratis</span>
               <span>Chat directo</span>
-              <span>Productos destacados</span>
+              <span>Ofertas por ciudad</span>
             </div>
           </div>
 
@@ -409,24 +409,53 @@ export default function Home() {
 
         <section className={styles.confidenceBand} aria-label="Confianza y seguridad">
           <article>
+            <span className={styles.confidenceIcon} aria-hidden="true">✓</span>
             <strong>Compra con calma</strong>
             <span>Pregunta por estado, entrega y forma de pago antes de cerrar.</span>
           </article>
           <article>
+            <span className={styles.confidenceIcon} aria-hidden="true">↔</span>
             <strong>Chat dentro de YaVendelo</strong>
-            <span>Mantén acuerdos y dudas en la conversación del producto.</span>
+            <span>Mantén dudas y acuerdos en la conversación del producto.</span>
           </article>
           <article>
+            <span className={styles.confidenceIcon} aria-hidden="true">⌂</span>
             <strong>Comunidad local</strong>
-            <span>Tu feedback ayuda a mejorar una plataforma hecha para comprar y vender cerca de ti.</span>
+            <span>Encuentra productos y vendedores cerca de tu ciudad.</span>
           </article>
+        </section>
+
+        <section className={styles.howItWorks} aria-labelledby="como-funciona">
+          <div className={styles.howHeader}>
+            <p className={styles.sectionLabel}>Cómo funciona</p>
+            <h2 id="como-funciona">Publica, conversa y cierra el trato</h2>
+          </div>
+
+          <div className={styles.stepsGrid}>
+            <article>
+              <strong>1</strong>
+              <h3>Publica tu producto</h3>
+              <p>Sube fotos, precio, ciudad y una descripción clara en minutos.</p>
+            </article>
+            <article>
+              <strong>2</strong>
+              <h3>Recibe mensajes</h3>
+              <p>Las personas interesadas te contactan directo desde YaVendelo.</p>
+            </article>
+            <article>
+              <strong>3</strong>
+              <h3>Cierra el trato</h3>
+              <p>Acuerda entrega, revisa el producto y compra o vende con calma.</p>
+            </article>
+          </div>
         </section>
 
         <section className={styles.searchSection} id="productos">
           <div className={styles.searchHeader}>
             <div>
-              <p className={styles.sectionLabel}>Encuentra lo que necesitas</p>
+              <p className={styles.sectionLabel}>Productos destacados</p>
               <h2>Explora publicaciones reales cerca de ti</h2>
+              <p className={styles.searchSubtitle}>Filtra por categoría, ciudad, precio o estado para encontrar rápido lo que buscas.</p>
             </div>
 
             {!loading && (
@@ -439,7 +468,7 @@ export default function Home() {
           <div className={styles.searchBox}>
             <input
               type="search"
-              placeholder="Buscar por producto, ciudad o categoría..."
+              placeholder="Busca autos, celulares, muebles, ropa..."
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value);
@@ -558,7 +587,7 @@ export default function Home() {
             <div className={styles.emptyState}>
               <span>Sin resultados</span>
               <h2>No encontramos productos con esos filtros</h2>
-              <p>Prueba con otra búsqueda, amplía el rango de precio o explora todas las categorías.</p>
+              <p>Prueba con otra búsqueda, cambia la ciudad o limpia los filtros para ver más publicaciones.</p>
               <button type="button" onClick={clearFilters}>
                 Ver todos los productos
               </button>
@@ -653,22 +682,22 @@ export default function Home() {
         <section className={styles.infoBand}>
           <div>
             <span className={styles.sectionLabel}>Vende mejor</span>
-            <h2>Todo listo para lanzar: publicar, destacar y conversar.</h2>
+            <h2>Más confianza desde el primer vistazo.</h2>
           </div>
 
           <div className={styles.infoGrid}>
             <article>
-              <strong>1</strong>
+              <strong>✓</strong>
               <h3>Publica con buenas fotos</h3>
               <p>Agrega precio, ubicación y descripción clara para generar confianza desde el primer vistazo.</p>
             </article>
             <article>
-              <strong>2</strong>
+              <strong>★</strong>
               <h3>Destaca tu producto</h3>
               <p>Las publicaciones premium aparecen primero y tienen mayor visibilidad en la portada.</p>
             </article>
             <article>
-              <strong>3</strong>
+              <strong>↗</strong>
               <h3>Cierra por chat</h3>
               <p>Habla directo con compradores interesados y acuerda los detalles de forma ágil.</p>
             </article>
@@ -678,8 +707,8 @@ export default function Home() {
         <section className={styles.betaCta}>
           <div>
             <p className={styles.sectionLabel}>Ayuda y feedback</p>
-            <h2>¿Encontraste algo raro?</h2>
-            <p>Reporta errores visuales, flujos confusos o cualquier cosa que te haga dudar.</p>
+            <h2>¿Necesitas ayuda?</h2>
+            <p>Cuéntanos si algo no se entiende o si necesitas reportar un problema.</p>
           </div>
           <Link href="/ayuda#feedback" className={styles.secondaryButton}>
             Reportar problema
@@ -690,6 +719,7 @@ export default function Home() {
           <div>
             <p className={styles.sectionLabel}>Empieza hoy</p>
             <h2>Convierte lo que ya no usas en una venta real.</h2>
+            <p className={styles.finalCopy}>Úsalo desde tu navegador y publica gratis cuando estés listo.</p>
           </div>
           <Link
             href="/publicar"

@@ -99,10 +99,10 @@ export default function FeaturedProducts() {
     <section className="mx-auto mb-14 w-full max-w-[1240px]">
       <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="mb-2 text-xs font-black uppercase text-orange-300">Visibilidad extra</p>
-          <h2 className="text-3xl font-black text-white md:text-4xl">Productos Premium</h2>
+          <p className="mb-2 text-xs font-black uppercase text-orange-300">Destacados</p>
+          <h2 className="text-3xl font-black text-white md:text-4xl">Productos que vale la pena ver</h2>
           <p className="mt-2 text-sm text-white/60">
-            Publicaciones destacadas activas por tiempo limitado.
+            Publicaciones con más visibilidad para encontrar buenas oportunidades rápido.
           </p>
         </div>
 
@@ -110,7 +110,7 @@ export default function FeaturedProducts() {
           href="/publicar"
           className="rounded-lg border border-orange-500/30 bg-orange-500/15 px-4 py-3 text-sm font-black text-orange-300"
         >
-          Destacar mi producto
+          Publicar gratis
         </Link>
       </div>
 

@@ -12,6 +12,7 @@
 .searchSection,
 .marketSection,
 .infoBand,
+.howItWorks,
 .finalCta,
 .footer {
   width: min(100%, 1240px);
@@ -24,7 +25,7 @@
   grid-template-columns: minmax(0, 1fr) minmax(420px, 0.92fr);
   gap: 42px;
   align-items: center;
-  padding: 48px 0 26px;
+  padding: 42px 0 24px;
 }
 
 .heroContent h1 {
@@ -48,7 +49,7 @@
 
 .heroCopy {
   max-width: 650px;
-  margin: 24px 0 0;
+  margin: 20px 0 0;
   color: #c7c7c7;
   font-size: 18px;
   line-height: 1.7;
@@ -58,12 +59,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 30px;
+  margin-top: 24px;
 }
 
 .heroSearchCard {
   max-width: 720px;
-  margin-top: 28px;
+  margin-top: 24px;
   border: 1px solid rgba(255, 123, 0, 0.18);
   background:
     linear-gradient(135deg, rgba(255, 123, 0, 0.12), transparent 38%),
@@ -162,7 +163,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 28px;
+  margin-top: 24px;
 }
 
 .trustGrid span,
@@ -266,33 +267,113 @@
 }
 
 .searchSection {
-  padding: 34px 0 24px;
+  padding: 28px 0 22px;
 }
 
 .confidenceBand {
   width: min(100%, 1240px);
-  margin: 0 auto 14px;
+  margin: 0 auto 18px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
 .confidenceBand article {
+  display: grid;
+  gap: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.045);
+  background:
+    linear-gradient(135deg, rgba(255, 123, 0, 0.08), transparent 42%),
+    rgba(255, 255, 255, 0.045);
   border-radius: 8px;
-  padding: 16px;
+  padding: 18px;
 }
 
 .confidenceBand strong {
   display: block;
-  margin-bottom: 6px;
   color: #ffffff;
   font-size: 16px;
 }
 
 .confidenceBand span {
   color: #bdbdbd;
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+.confidenceIcon {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 123, 0, 0.26);
+  background: rgba(255, 123, 0, 0.13);
+  color: #ffb067;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.howItWorks {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1.28fr);
+  gap: 20px;
+  align-items: stretch;
+  padding: 20px 0 10px;
+}
+
+.howHeader {
+  border-radius: 8px;
+  border: 1px solid rgba(255, 123, 0, 0.16);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 123, 0, 0.15), transparent 18rem),
+    rgba(255, 255, 255, 0.04);
+  padding: 22px;
+}
+
+.howHeader h2 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.08;
+  font-weight: 900;
+}
+
+.stepsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stepsGrid article {
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.035));
+  padding: 18px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+}
+
+.stepsGrid strong {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffb067, #ff7b00);
+  color: #101010;
+  font-weight: 900;
+}
+
+.stepsGrid h3 {
+  margin: 16px 0 8px;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.stepsGrid p {
+  margin: 0;
+  color: #b7b7b7;
   line-height: 1.55;
   font-size: 14px;
 }
@@ -314,6 +395,15 @@
   line-height: 1.1;
   font-weight: 900;
   letter-spacing: 0;
+}
+
+.searchSubtitle,
+.finalCopy {
+  max-width: 660px;
+  margin: 10px 0 0;
+  color: #b7b7b7;
+  line-height: 1.6;
+  font-weight: 700;
 }
 
 .resultCount {
@@ -380,7 +470,7 @@
 }
 
 .marketSection {
-  padding: 24px 0 44px;
+  padding: 18px 0 42px;
 }
 
 .productsGrid {
@@ -688,7 +778,7 @@
 }
 
 .infoBand {
-  padding: 46px 0;
+  padding: 42px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -821,8 +911,13 @@
 
   .filterGrid,
   .productsGrid,
-  .infoGrid {
+  .infoGrid,
+  .stepsGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .howItWorks {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -881,8 +976,22 @@
   .confidenceBand,
   .filterGrid,
   .productsGrid,
-  .infoGrid {
+  .infoGrid,
+  .stepsGrid {
     grid-template-columns: 1fr;
+  }
+
+  .howItWorks {
+    padding: 14px 0 8px;
+  }
+
+  .howHeader,
+  .stepsGrid article {
+    padding: 18px;
+  }
+
+  .howHeader h2 {
+    font-size: 28px;
   }
 
   .productMedia {
