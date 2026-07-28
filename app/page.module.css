@@ -15,7 +15,8 @@
 .howItWorks,
 .finalCta,
 .footer {
-  width: min(100%, 1240px);
+  width: 100%;
+  max-width: 1700px;
   margin: 0 auto;
 }
 
@@ -27,12 +28,13 @@
 }
 
 .hero {
-  width: min(100%, 1360px);
+  width: 100%;
+  max-width: 1700px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(420px, 0.92fr);
-  gap: 42px;
+  grid-template-columns: minmax(0, 55fr) minmax(420px, 45fr);
+  gap: 48px;
   align-items: center;
-  padding: 42px 0 24px;
+  padding: 56px 0 40px;
 }
 
 .heroContent h1 {
@@ -213,7 +215,7 @@
 
 .heroImage {
   position: relative;
-  height: 430px;
+  height: clamp(430px, 31vw, 560px);
   overflow: hidden;
   border-radius: 6px;
   background: #141414;
@@ -274,12 +276,13 @@
 }
 
 .searchSection {
-  padding: 28px 0 22px;
+  padding: 54px 0 24px;
 }
 
 .confidenceBand {
-  width: min(100%, 1240px);
-  margin: 0 auto 18px;
+  width: 100%;
+  max-width: 1700px;
+  margin: 0 auto 32px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
@@ -327,7 +330,7 @@
   grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1.28fr);
   gap: 20px;
   align-items: stretch;
-  padding: 20px 0 10px;
+  padding: 48px 0 28px;
 }
 
 .howHeader {
@@ -477,7 +480,7 @@
 }
 
 .marketSection {
-  padding: 18px 0 42px;
+  padding: 24px 0 80px;
 }
 
 .productsGrid {
@@ -485,7 +488,7 @@
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   grid-auto-rows: 1fr;
   align-items: stretch;
-  gap: 26px;
+  gap: 28px;
 }
 
 .productCard,
@@ -812,7 +815,7 @@
 }
 
 .infoBand {
-  padding: 42px 0;
+  padding: 80px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -851,11 +854,12 @@
 }
 
 .finalCta {
-  padding: 42px 0;
+  padding: 80px 0 54px;
 }
 
 .betaCta {
-  width: min(100%, 1240px);
+  width: 100%;
+  max-width: 1700px;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -944,10 +948,13 @@
   }
 
   .filterGrid,
-  .productsGrid,
   .infoGrid,
   .stepsGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .productsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .howItWorks {
@@ -957,33 +964,65 @@
 
 @media (max-width: 760px) {
   .page {
-    padding: 0 16px calc(150px + env(safe-area-inset-bottom));
+    padding: 0 12px calc(138px + env(safe-area-inset-bottom));
   }
 
   .hero {
-    padding-top: 24px;
-    padding-bottom: 18px;
-    gap: 22px;
+    padding-top: 14px;
+    padding-bottom: 10px;
+    gap: 14px;
   }
 
-  .heroContent h1 {
-    font-size: 42px !important;
-    line-height: 1.04;
-  }
-
-  .heroCopy {
-    font-size: 16px;
-    margin-top: 18px;
-    line-height: 1.6;
+  .heroContent {
+    display: flex;
+    flex-direction: column;
   }
 
   .heroSearchCard {
-    margin-top: 22px;
-    padding: 16px;
+    order: 1;
+  }
+
+  .heroActions {
+    order: 2;
+  }
+
+  .eyebrow {
+    order: 3;
+  }
+
+  .heroContent h1 {
+    order: 4;
+  }
+
+  .heroCopy {
+    order: 5;
+  }
+
+  .trustGrid {
+    order: 6;
+  }
+
+  .heroContent h1 {
+    font-size: 32px !important;
+    line-height: 1.04;
+    margin-top: 16px;
+  }
+
+  .heroCopy {
+    font-size: 14px;
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+
+  .heroSearchCard {
+    margin-top: 0;
+    padding: 12px;
+    border-radius: 14px;
   }
 
   .heroSearchRow input {
-    min-height: 50px;
+    min-height: 52px;
+    border-radius: 14px;
   }
 
   .searchHeader,
@@ -1002,17 +1041,27 @@
     font-size: 30px;
   }
 
-  .heroImage {
-    height: 280px;
+  .heroPanel {
+    display: none;
+  }
+
+  .heroSearchRow button {
+    width: auto;
+    border-radius: 14px;
+    padding-inline: 14px;
   }
 
   .statRow,
   .confidenceBand,
   .filterGrid,
-  .productsGrid,
   .infoGrid,
   .stepsGrid {
     grid-template-columns: 1fr;
+  }
+
+  .productsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 
   .howItWorks {
@@ -1029,8 +1078,9 @@
   }
 
   .productMedia {
-    height: 280px;
-    flex-basis: 280px;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    flex-basis: auto;
   }
 
   .primaryButton,
@@ -1038,22 +1088,81 @@
   .compactPublishButton,
   .clearButton,
   .emptyState button {
+    min-height: 48px;
+    border-radius: 14px;
     width: 100%;
   }
 
   .productBody {
     min-height: auto;
-    padding: 18px;
+    gap: 10px;
+    padding: 12px;
   }
 
   .priceLine {
     align-items: flex-start;
     flex-direction: column;
-    gap: 8px;
+    gap: 5px;
   }
 
   .priceLine strong {
-    font-size: 32px;
+    font-size: 20px;
+  }
+
+  .priceLine span,
+  .productFooter span,
+  .sellerLine {
+    font-size: 11px;
+  }
+
+  .productBody h3 {
+    font-size: 14px;
+    line-height: 1.25;
+  }
+
+  .productBody p {
+    display: none;
+  }
+
+  .sellerLine {
+    display: none;
+  }
+
+  .productFooter {
+    display: grid;
+    gap: 8px;
+    padding-top: 10px;
+  }
+
+  .viewCta {
+    width: 100%;
+    min-height: 38px;
+    border-radius: 14px;
+  }
+
+  .favoriteButton,
+  .favoriteButtonActive {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+    font-size: 20px;
+  }
+
+  .categoryPill,
+  .newBadge,
+  .premiumBadge,
+  .soldBadge {
+    border-radius: 14px;
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+
+  .marketSection {
+    padding-top: 12px;
+  }
+
+  .footer {
+    display: none;
   }
 
   .quickFilters {
@@ -1073,7 +1182,7 @@
 
 @media (max-width: 420px) {
   .heroContent h1 {
-    font-size: 38px !important;
+    font-size: 30px !important;
   }
 
   .trustGrid {

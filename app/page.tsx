@@ -407,6 +407,8 @@ export default function Home() {
           </div>
         </section>
 
+        <FeaturedProducts />
+
         <section className={styles.confidenceBand} aria-label="Confianza y seguridad">
           <article>
             <span className={styles.confidenceIcon} aria-hidden="true">✓</span>
@@ -577,8 +579,6 @@ export default function Home() {
             )}
           </div>
         </section>
-
-        <FeaturedProducts />
 
         <section className={styles.marketSection}>
           {loading && <ProductsSkeleton />}

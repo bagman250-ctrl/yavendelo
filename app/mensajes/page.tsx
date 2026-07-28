@@ -255,7 +255,8 @@ const pageStyle: React.CSSProperties = {
 };
 
 const containerStyle: React.CSSProperties = {
-  maxWidth: "980px",
+  width: "100%",
+  maxWidth: "1700px",
   margin: "0 auto",
 };
 
@@ -304,7 +305,8 @@ const securityPill: React.CSSProperties = {
 
 const listStyle: React.CSSProperties = {
   display: "grid",
-  gap: "14px",
+  gridTemplateColumns: "repeat(auto-fit,minmax(min(420px,100%),1fr))",
+  gap: "18px",
 };
 
 const conversationCard: React.CSSProperties = {

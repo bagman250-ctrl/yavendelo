@@ -524,7 +524,8 @@ const pageStyle: React.CSSProperties = {
 };
 
 const containerStyle: React.CSSProperties = {
-  maxWidth: "1240px",
+  width: "100%",
+  maxWidth: "1700px",
   margin: "0 auto",
 };
 
@@ -671,8 +672,8 @@ const sectionTitle: React.CSSProperties = {
 
 const productsGrid: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))",
-  gap: "18px",
+  gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))",
+  gap: "24px",
 };
 
 const productCard: React.CSSProperties = {

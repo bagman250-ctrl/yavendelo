@@ -396,7 +396,8 @@ const pageStyle: React.CSSProperties = {
 };
 
 const containerStyle: React.CSSProperties = {
-  maxWidth: "1180px",
+  width: "100%",
+  maxWidth: "1700px",
   margin: "0 auto",
 };
 
@@ -595,8 +596,8 @@ const reviewText: React.CSSProperties = {
 
 const productsGrid: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
-  gap: "16px",
+  gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))",
+  gap: "24px",
 };
 
 const emptyState: React.CSSProperties = {

@@ -396,7 +396,7 @@ export default function ProductClient({ productId }: { productId: string }) {
             )}
           </section>
 
-          <section style={summaryCard}>
+          <section className="product-summary-card" style={summaryCard}>
             <div style={badgesRow}>
               <span style={isSold ? soldBadge : availableBadge}>{isSold ? "Vendido" : "Disponible"}</span>
               {recentlyPublished && <span style={newBadge}>Publicado recientemente</span>}
@@ -404,9 +404,9 @@ export default function ProductClient({ productId }: { productId: string }) {
               {product.featured && <span style={premiumSmallBadge}>Destacado</span>}
             </div>
 
-            <h1 style={productTitle}>{product.titulo || "Producto disponible"}</h1>
-            <p style={priceStyle}>{formatPrice(product.precio)}</p>
-            <div style={locationRow}>
+            <h1 className="product-title-detail" style={productTitle}>{product.titulo || "Producto disponible"}</h1>
+            <p className="price-detail" style={priceStyle}>{formatPrice(product.precio)}</p>
+            <div className="location-detail" style={locationRow}>
               <span aria-hidden="true">📍</span>
               <p style={cityStyle}>{product.ciudad || "México"}</p>
               <span style={dotStyle}>•</span>
@@ -584,6 +584,27 @@ export default function ProductClient({ productId }: { productId: string }) {
             .product-actions :global(a) {
               flex: 1 1 140px;
             }
+
+            .product-summary-card {
+              display: flex !important;
+              flex-direction: column !important;
+            }
+
+            .product-summary-card > * {
+              order: 10;
+            }
+
+            .price-detail {
+              order: 1;
+            }
+
+            .product-title-detail {
+              order: 2;
+            }
+
+            .location-detail {
+              order: 3;
+            }
           }
 
           @media (hover: none) {
@@ -615,11 +636,12 @@ const pageStyle: React.CSSProperties = {
 };
 
 const containerStyle: React.CSSProperties = {
-  maxWidth: "1240px",
+  width: "100%",
+  maxWidth: "1700px",
   margin: "0 auto",
   display: "grid",
-  gridTemplateColumns: "minmax(0, 1.08fr) minmax(380px, 0.92fr)",
-  gap: "24px",
+  gridTemplateColumns: "minmax(0, 1.16fr) minmax(420px, 0.84fr)",
+  gap: "32px",
   alignItems: "start",
 };
 
@@ -986,7 +1008,8 @@ const dangerButton: React.CSSProperties = {
 };
 
 const relatedSection: React.CSSProperties = {
-  width: "min(1180px, 100%)",
+  width: "100%",
+  maxWidth: "1700px",
   margin: "26px auto 0",
   border: "1px solid rgba(255,255,255,0.1)",
   background: "linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.028))",
@@ -1004,8 +1027,8 @@ const relatedHeader: React.CSSProperties = {
 
 const relatedGrid: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))",
-  gap: "14px",
+  gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))",
+  gap: "18px",
 };
 
 const relatedCard: React.CSSProperties = {

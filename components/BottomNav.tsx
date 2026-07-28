@@ -3,74 +3,41 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { User, onAuthStateChanged } from "firebase/auth";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
 
-import { auth, db } from "@/app/firebase/config";
+import { auth } from "@/app/firebase/config";
 import UserAvatar from "./UserAvatar";
 
 export default function BottomNav() {
   const [user, setUser] = useState<User | null>(null);
-  const [notificationsCount, setNotificationsCount] = useState(0);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
-      if (!firebaseUser) setNotificationsCount(0);
     });
 
     return () => unsubscribeAuth();
   }, []);
 
-  useEffect(() => {
-    if (!user) return;
-
-    const q = query(
-      collection(db, "notifications"),
-      where("userId", "==", user.uid),
-      where("read", "==", false)
-    );
-
-    const unsubscribeNotifications = onSnapshot(
-      q,
-      (snapshot) => {
-        setNotificationsCount(snapshot.size);
-      },
-      (error) => {
-        console.warn("No se pudieron cargar notificaciones:", error);
-        setNotificationsCount(0);
-      }
-    );
-
-    return () => unsubscribeNotifications();
-  }, [user]);
-
   return (
     <>
-      <nav style={navStyle} aria-label="Navegación principal móvil">
+      <nav style={navStyle} aria-label="Navegacion principal movil">
         <Link href="/" style={link}>
-          <div style={icon}>⌂</div>
+          <HomeIcon />
           <span style={text}>Inicio</span>
         </Link>
 
-        <Link href="/favoritos" style={link}>
-          <div style={icon}>♡</div>
-          <span style={text}>Favoritos</span>
+        <Link href="/#productos" style={link}>
+          <SearchIcon />
+          <span style={text}>Buscar</span>
         </Link>
 
         <Link href="/publicar" style={{ ...link, transform: "translateY(-22px)" }} aria-label="Publicar">
           <div style={plusButton}>+</div>
         </Link>
 
-        <Link href="/mensajes" style={link}>
-          <div style={{ position: "relative" }}>
-            <div style={icon}>◌</div>
-            {notificationsCount > 0 && (
-              <div style={badge}>
-                {notificationsCount > 9 ? "9+" : notificationsCount}
-              </div>
-            )}
-          </div>
-          <span style={text}>Mensajes</span>
+        <Link href="/favoritos" style={link}>
+          <HeartIcon />
+          <span style={text}>Favoritos</span>
         </Link>
 
         <Link href="/perfil" style={link}>
@@ -83,7 +50,7 @@ export default function BottomNav() {
               label="Perfil"
             />
           ) : (
-            <div style={icon}>◎</div>
+            <ProfileIcon />
           )}
           <span style={text}>Perfil</span>
         </Link>
@@ -108,6 +75,48 @@ export default function BottomNav() {
   );
 }
 
+function HomeIcon() {
+  return (
+    <span style={icon} aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M4 11.2 12 4l8 7.2V20h-5v-5.2H9V20H4v-8.8Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <span style={icon} aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <circle cx="11" cy="11" r="6" stroke="currentColor" strokeWidth="2" />
+        <path d="m16 16 4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    </span>
+  );
+}
+
+function HeartIcon() {
+  return (
+    <span style={icon} aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
+
+function ProfileIcon() {
+  return (
+    <span style={icon} aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" />
+        <path d="M4.5 20a7.5 7.5 0 0 1 15 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    </span>
+  );
+}
+
 const navStyle: React.CSSProperties = {
   position: "fixed",
   bottom: "calc(12px + env(safe-area-inset-bottom))",
@@ -118,7 +127,7 @@ const navStyle: React.CSSProperties = {
   background: "rgba(15,15,15,0.92)",
   backdropFilter: "blur(18px)",
   border: "1px solid rgba(255,255,255,0.1)",
-  borderRadius: "8px",
+  borderRadius: "18px",
   padding: "11px 10px",
   display: "flex",
   justifyContent: "space-around",
@@ -134,7 +143,7 @@ const link: React.CSSProperties = {
   flexDirection: "column",
   alignItems: "center",
   gap: "5px",
-  fontSize: "12px",
+  fontSize: "11px",
   fontWeight: "800",
   minWidth: "52px",
 };
@@ -142,13 +151,13 @@ const link: React.CSSProperties = {
 const icon: React.CSSProperties = {
   width: "30px",
   height: "30px",
-  borderRadius: "8px",
+  borderRadius: "14px",
   border: "1px solid rgba(255,255,255,0.1)",
   background: "rgba(255,255,255,0.04)",
+  color: "#ffb067",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "18px",
   lineHeight: 1,
 };
 
@@ -159,30 +168,13 @@ const text: React.CSSProperties = {
 const plusButton: React.CSSProperties = {
   width: "58px",
   height: "58px",
-  borderRadius: "8px",
-  background: "linear-gradient(135deg, #ffb067, #ff7b00)",
+  borderRadius: "18px",
+  background: "linear-gradient(135deg, #ffb067, #ff8a00)",
   color: "#101010",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
   fontSize: "34px",
   fontWeight: "900",
-  boxShadow: "0 10px 30px rgba(255,123,0,0.35)",
-};
-
-const badge: React.CSSProperties = {
-  position: "absolute",
-  top: "-8px",
-  right: "-12px",
-  minWidth: "20px",
-  height: "20px",
-  borderRadius: "999px",
-  background: "#ff3b30",
-  color: "white",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  fontSize: "11px",
-  fontWeight: "900",
-  padding: "0 6px",
+  boxShadow: "0 10px 30px rgba(255,138,0,0.35)",
 };

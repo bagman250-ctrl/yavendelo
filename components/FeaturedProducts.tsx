@@ -75,13 +75,13 @@ export default function FeaturedProducts() {
 
   if (loading) {
     return (
-      <section className="mx-auto mb-12 w-full max-w-[1240px]">
+      <section className="mx-auto mb-16 w-full max-w-[1700px]">
         <div className="mb-6 h-8 w-64 animate-pulse rounded-lg bg-white/10" />
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:gap-7 2xl:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, index) => (
             <div key={index} className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
-              <div className="h-56 animate-pulse bg-white/10" />
-              <div className="space-y-4 p-5">
+              <div className="h-40 animate-pulse bg-white/10 md:h-64" />
+              <div className="space-y-3 p-3 md:space-y-4 md:p-5">
                 <div className="h-5 w-3/4 animate-pulse rounded-lg bg-white/10" />
                 <div className="h-4 w-1/2 animate-pulse rounded-lg bg-white/10" />
                 <div className="h-6 w-1/3 animate-pulse rounded-lg bg-orange-500/20" />
@@ -96,7 +96,7 @@ export default function FeaturedProducts() {
   if (productos.length === 0) return null;
 
   return (
-    <section className="mx-auto mb-14 w-full max-w-[1240px]">
+    <section className="mx-auto mb-12 w-full max-w-[1700px] md:mb-20">
       <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="mb-2 text-xs font-black uppercase text-orange-300">Destacados</p>
@@ -114,7 +114,7 @@ export default function FeaturedProducts() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:gap-7 2xl:grid-cols-5">
         {productos.map((producto) => {
           const image = producto.imagen || producto.imagenes?.[0] || "/og-image.png";
           const daysLeft = getDaysLeft(producto.featuredUntil);
@@ -125,12 +125,12 @@ export default function FeaturedProducts() {
               href={`/producto/${producto.id}`}
               className="group overflow-hidden rounded-lg border border-orange-500/20 bg-white/[0.04] shadow-2xl shadow-orange-500/10 transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/40"
             >
-              <div className="relative h-60 overflow-hidden">
+              <div className="relative aspect-square overflow-hidden md:aspect-auto md:h-64">
                 <Image
                   src={image}
                   alt={producto.titulo || "Producto premium"}
                   fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1280px) 33vw, 20vw"
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
 
@@ -146,22 +146,22 @@ export default function FeaturedProducts() {
                 </div>
               </div>
 
-              <div className="p-5">
-                <h3 className="line-clamp-1 text-xl font-black text-white">
+              <div className="p-3 md:p-5">
+                <h3 className="line-clamp-2 text-sm font-black text-white md:line-clamp-1 md:text-xl">
                   {producto.titulo || "Producto"}
                 </h3>
-                <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/50">
+                <p className="mt-2 hidden line-clamp-2 text-sm leading-6 text-white/50 md:block">
                   {producto.descripcion || "Producto disponible en YaVendelo."}
                 </p>
-                <p className="mt-3 text-sm font-bold text-white/50">
+                <p className="mt-2 truncate text-xs font-bold text-white/50 md:mt-3 md:text-sm">
                   {producto.ciudad || "México"}
                 </p>
 
-                <div className="mt-5 flex items-center justify-between gap-3">
-                  <span className="text-2xl font-black text-orange-300">
+                <div className="mt-3 grid gap-2 md:mt-5 md:flex md:items-center md:justify-between md:gap-3">
+                  <span className="text-lg font-black text-orange-300 md:text-2xl">
                     {formatPrice(producto.precio)}
                   </span>
-                  <div className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white/80">
+                  <div className="min-h-10 rounded-[14px] border border-white/10 bg-white/5 px-3 py-2 text-center text-xs font-bold text-white/80 md:rounded-lg md:px-4 md:text-sm">
                     Ver producto
                   </div>
                 </div>

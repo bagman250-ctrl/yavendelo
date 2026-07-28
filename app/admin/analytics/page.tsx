@@ -358,7 +358,8 @@ const loadingBox: CSSProperties = {
 };
 
 const containerStyle: CSSProperties = {
-  maxWidth: "1360px",
+  width: "100%",
+  maxWidth: "1700px",
   margin: "0 auto",
 };
 

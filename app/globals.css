@@ -124,6 +124,17 @@ a {
   color: transparent;
 }
 
+.layout-wrapper {
+  width: 100%;
+  max-width: 1700px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+.debug-layout-outline :is(header, main, section, article, div, footer) {
+  outline: 1px solid rgba(255, 0, 0, 0.55);
+}
+
 .fade-in {
   animation: fadeIn 0.35s ease both;
 }
@@ -183,6 +194,66 @@ a {
     padding-left: 16px !important;
     padding-right: 16px !important;
     padding-bottom: calc(150px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .topbar-shell {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 10px !important;
+    padding: 12px 16px !important;
+  }
+
+  .topbar-brand {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .topbar-actions {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    justify-content: flex-end !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  .topbar-actions > .auth-group {
+    display: none !important;
+  }
+
+  .mobile-menu-button {
+    display: inline-flex !important;
+  }
+
+  .topbar-search {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .top-search-box {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 52px !important;
+    border-radius: 14px !important;
+  }
+}
+
+@media (min-width: 640px) {
+  .layout-wrapper {
+    padding-inline: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .layout-wrapper {
+    padding-inline: 32px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .layout-wrapper {
+    padding-inline: 40px;
   }
 }
 

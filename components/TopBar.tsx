@@ -26,6 +26,7 @@ export default function TopBar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationPreview[]>([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
@@ -180,6 +181,16 @@ export default function TopBar() {
           </div>
 
           <AuthButtons />
+          <button
+            type="button"
+            className="mobile-menu-button"
+            style={menuButton}
+            aria-label="Abrir menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((current) => !current)}
+          >
+            <MenuIcon />
+          </button>
         </div>
 
         <div className="topbar-search" style={searchSlot}>
@@ -198,6 +209,35 @@ export default function TopBar() {
           </form>
         </div>
       </div>
+
+      {menuOpen && (
+        <div className="mobile-menu-overlay" style={mobileOverlay} onClick={() => setMenuOpen(false)}>
+          <aside className="mobile-menu-panel" style={mobilePanel} onClick={(event) => event.stopPropagation()}>
+            <div style={mobilePanelHeader}>
+              <div style={logoStyle}>
+                <LogoIcon />
+                <span className="brand-text" style={logoText}>YaVendelo</span>
+              </div>
+              <button type="button" style={closeButton} aria-label="Cerrar menu" onClick={() => setMenuOpen(false)}>
+                x
+              </button>
+            </div>
+
+            <nav style={mobileNavStyle} aria-label="Menu movil">
+              <Link href="/" style={mobileNavLink} onClick={() => setMenuOpen(false)}>Inicio</Link>
+              <Link href="/publicar" style={mobileNavPrimary} onClick={() => setMenuOpen(false)}>Publicar</Link>
+              <Link href="/mensajes" style={mobileNavLink} onClick={() => setMenuOpen(false)}>Mensajes</Link>
+              <Link href="/favoritos" style={mobileNavLink} onClick={() => setMenuOpen(false)}>Favoritos</Link>
+              <Link href="/perfil" style={mobileNavLink} onClick={() => setMenuOpen(false)}>Perfil</Link>
+              <Link href="/ayuda" style={mobileNavLink} onClick={() => setMenuOpen(false)}>Ayuda</Link>
+            </nav>
+
+            <div style={drawerAuthWrap}>
+              <AuthButtons />
+            </div>
+          </aside>
+        </div>
+      )}
 
       <style jsx>{`
         @media (max-width: 1180px) {
@@ -220,7 +260,7 @@ export default function TopBar() {
 
         @media (max-width: 767px) {
           header :global(.topbar-shell) {
-            grid-template-columns: 1fr !important;
+            grid-template-columns: 1fr auto !important;
             gap: 10px !important;
             padding: 12px 16px !important;
           }
@@ -231,16 +271,24 @@ export default function TopBar() {
           }
 
           header :global(.topbar-search) {
-            grid-column: 1 !important;
+            grid-column: 1 / -1 !important;
             grid-row: 2 !important;
           }
 
           header :global(.topbar-actions) {
-            grid-column: 1 !important;
-            grid-row: 3 !important;
-            justify-content: space-between !important;
-            width: 100% !important;
+            grid-column: 2 !important;
+            grid-row: 1 !important;
+            justify-content: flex-end !important;
+            width: auto !important;
             gap: 10px !important;
+          }
+
+          header :global(.topbar-actions > .auth-group) {
+            display: none !important;
+          }
+
+          header :global(.mobile-menu-button) {
+            display: inline-flex !important;
           }
 
           .top-search-box {
@@ -251,6 +299,13 @@ export default function TopBar() {
 
           header :global(.brand-text) {
             font-size: 20px !important;
+          }
+        }
+
+        @media (min-width: 768px) {
+          header :global(.mobile-menu-button),
+          header :global(.mobile-menu-overlay) {
+            display: none !important;
           }
         }
 
@@ -304,13 +359,13 @@ const headerStyle: React.CSSProperties = {
 
 const containerStyle: React.CSSProperties = {
   width: "100%",
-  maxWidth: "1440px",
+  maxWidth: "1700px",
   margin: "0 auto",
-  padding: "12px 24px",
+  padding: "14px 32px",
   display: "grid",
-  gridTemplateColumns: "auto minmax(340px, 520px) auto",
+  gridTemplateColumns: "auto minmax(420px, 680px) auto",
   alignItems: "center",
-  gap: "24px",
+  gap: "32px",
   boxSizing: "border-box",
 };
 
@@ -323,7 +378,7 @@ const searchSlot: React.CSSProperties = {
 const rightStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "12px",
+  gap: "14px",
   justifyContent: "flex-end",
   minWidth: 0,
   gridColumn: 3,
@@ -334,7 +389,7 @@ const rightStyle: React.CSSProperties = {
 const leftStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "22px",
+  gap: "28px",
   minWidth: 0,
   gridColumn: 1,
   gridRow: 1,
@@ -343,14 +398,14 @@ const leftStyle: React.CSSProperties = {
 const logoStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "12px",
+  gap: "14px",
   fontWeight: "900",
   letterSpacing: "0",
   whiteSpace: "nowrap",
 };
 
 const logoText: React.CSSProperties = {
-  fontSize: "24px",
+  fontSize: "26px",
   letterSpacing: "0",
   background: "linear-gradient(180deg, #fff, #d9d9d9)",
   WebkitBackgroundClip: "text",
@@ -360,7 +415,7 @@ const logoText: React.CSSProperties = {
 const navStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "14px",
+  gap: "18px",
   minWidth: 0,
 };
 
@@ -380,8 +435,8 @@ const notificationWrap: React.CSSProperties = {
 const notificationButton: React.CSSProperties = {
   position: "relative",
   color: "white",
-  width: "46px",
-  height: "46px",
+  width: "48px",
+  height: "48px",
   borderRadius: "8px",
   background: "rgba(255,255,255,0.06)",
   border: "1px solid rgba(255,255,255,0.1)",
@@ -421,7 +476,7 @@ const badgeStyle: React.CSSProperties = {
 const searchBox: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  minHeight: "46px",
+  minHeight: "48px",
   width: "100%",
   minWidth: 0,
   overflow: "hidden",
@@ -461,6 +516,92 @@ const searchSubmit: React.CSSProperties = {
   fontSize: "12px",
   fontWeight: "900",
   cursor: "pointer",
+};
+
+const menuButton: React.CSSProperties = {
+  display: "none",
+  width: "48px",
+  height: "48px",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "14px",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.06)",
+  color: "#ffffff",
+  cursor: "pointer",
+};
+
+const mobileOverlay: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 10000,
+  background: "rgba(0,0,0,0.62)",
+  backdropFilter: "blur(8px)",
+  display: "flex",
+  justifyContent: "flex-end",
+};
+
+const mobilePanel: React.CSSProperties = {
+  width: "min(86vw, 360px)",
+  height: "100%",
+  borderLeft: "1px solid rgba(255,255,255,0.1)",
+  background:
+    "linear-gradient(135deg, rgba(255,138,0,0.11), transparent 40%), rgba(8,8,8,0.98)",
+  padding: "18px",
+  boxShadow: "-24px 0 70px rgba(0,0,0,0.48)",
+  display: "flex",
+  flexDirection: "column",
+  gap: "18px",
+};
+
+const mobilePanelHeader: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
+};
+
+const closeButton: React.CSSProperties = {
+  width: "44px",
+  height: "44px",
+  borderRadius: "14px",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.06)",
+  color: "#ffffff",
+  fontSize: "26px",
+  fontWeight: "900",
+  cursor: "pointer",
+};
+
+const mobileNavStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "10px",
+};
+
+const mobileNavLink: React.CSSProperties = {
+  minHeight: "48px",
+  display: "flex",
+  alignItems: "center",
+  borderRadius: "14px",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.055)",
+  color: "#ffffff",
+  padding: "0 14px",
+  textDecoration: "none",
+  fontWeight: "900",
+};
+
+const mobileNavPrimary: React.CSSProperties = {
+  ...mobileNavLink,
+  border: "none",
+  background: "linear-gradient(135deg, #ffb067, #ff8a00)",
+  color: "#101010",
+};
+
+const drawerAuthWrap: React.CSSProperties = {
+  marginTop: "auto",
+  borderTop: "1px solid rgba(255,255,255,0.1)",
+  paddingTop: "14px",
 };
 
 const notificationsMenu: React.CSSProperties = {
@@ -543,17 +684,25 @@ function BellIcon({ active }: { active: boolean }) {
   );
 }
 
+function MenuIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 7h14M5 12h14M5 17h14" stroke="#ffb067" strokeWidth="2.1" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function LogoIcon() {
   return (
     <span className="logo-icon" style={logoIconWrap} aria-hidden="true">
-      <img src="/brand/yavendelo-mark.svg" alt="" width="42" height="42" style={logoImageStyle} />
+      <img src="/brand/yavendelo-mark.svg" alt="" width="46" height="46" style={logoImageStyle} />
     </span>
   );
 }
 
 const logoIconWrap: React.CSSProperties = {
-  width: "42px",
-  height: "42px",
+  width: "46px",
+  height: "46px",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
@@ -565,8 +714,8 @@ const logoIconWrap: React.CSSProperties = {
 };
 
 const logoImageStyle: React.CSSProperties = {
-  width: "42px",
-  height: "42px",
+  width: "46px",
+  height: "46px",
   display: "block",
   objectFit: "contain",
   opacity: 1,
